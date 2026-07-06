@@ -1,0 +1,16 @@
+# Dependency directories
+node_modules/
+**/node_modules/
+
+# Local env credentials files (Do not push secrets!)
+.env
+**/.env
+
+# Build outputs
+dist/
+**/dist/
+
+# System files
+.DS_Store
+**/.DS_Store
+Thumbs.db

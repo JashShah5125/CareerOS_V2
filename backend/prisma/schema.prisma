@@ -1,0 +1,164 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String             @id @default(auto()) @map("_id") @db.ObjectId
+  email             String             @unique
+  passwordHash      String
+  credits           Int                @default(100)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  profile           Profile?
+  resumes           Resume[]
+  jobs              Job[]
+  applications      Application[]
+  coverLetters      CoverLetter[]
+  interviewSessions InterviewSession[]
+  aiChats           AiChat[]
+  payments          Payment[]
+  subscriptions     Subscription[]
+}
+
+model Profile {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @unique @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName  String?
+  lastName   String?
+  avatarUrl  String?
+  headline   String?
+  targetRole String?
+  updatedAt  DateTime @updatedAt
+}
+
+model Resume {
+  id                 String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String          @db.ObjectId
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title              String
+  fileUrl            String?
+  score              Int             @default(0)
+  atsScore           Int             @default(0)
+  formattingAnalysis Json?
+  grammarAnalysis    Json?
+  skillAnalysis      Json?
+  projectAnalysis    Json?
+  experienceAnalysis Json?
+  achievementAnalysis Json?
+  strengths          String[]
+  weaknesses         String[]
+  suggestions        String[]
+  createdAt          DateTime        @default(now())
+  versions           ResumeVersion[]
+}
+
+model ResumeVersion {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  resumeId          String   @db.ObjectId
+  resume            Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  title             String
+  fileUrl           String?
+  versionNumber     Int
+  tailoredForJobId  String?
+  createdAt         DateTime @default(now())
+}
+
+model Job {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId               String   @db.ObjectId
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title                String
+  company              String
+  description          String
+  matchScore           Int      @default(0)
+  reqSkills            String[]
+  missingSkills        String[]
+  expMatch             String?
+  eduMatch             String?
+  recommendationSummary String?
+  createdAt            DateTime @default(now())
+}
+
+model Application {
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String             @db.ObjectId
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         String
+  role            String
+  salary          String?
+  status          ApplicationStatus  @default(APPLIED)
+  deadline        DateTime?
+  applicationDate DateTime           @default(now())
+  interviewDate   DateTime?
+  notes           String?
+  createdAt       DateTime           @default(now())
+}
+
+enum ApplicationStatus {
+  APPLIED
+  ASSESSMENT
+  INTERVIEW
+  OFFER
+  REJECTED
+}
+
+model CoverLetter {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobTitle  String
+  company   String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model InterviewSession {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String   // "TECHNICAL", "HR", "BEHAVIORAL", "CODING"
+  questionsJson Json
+  feedbackJson  Json?
+  historyJson   Json?
+  createdAt     DateTime @default(now())
+}
+
+model AiChat {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     String   // "RESUME", "JOB", "INTERVIEW"
+  messagesJson Json
+  createdAt    DateTime @default(now())
+}
+
+model Subscription {
+  id               String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String             @db.ObjectId
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status           SubscriptionStatus @default(INACTIVE)
+  plan             String             @default("FREE")
+  currentPeriodEnd DateTime?
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+}
+
+model Payment {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  status        String   // "SUCCESS", "PENDING", "FAILED"
+  transactionId String   @unique
+  createdAt     DateTime @default(now())
+}
