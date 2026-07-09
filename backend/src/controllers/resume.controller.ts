@@ -3,6 +3,7 @@ import { prisma } from '../prisma';
 import pdf from 'pdf-parse';
 import { getUserIdFromRequest } from './auth.controller';
 import { queryOllama, cleanJsonText } from '../utils/ollama';
+import { sanitizeParsedText } from '../services/parser.service';
 
 // Analyze formatting, skill, experience segments inside resume PDF/text
 export const analyzeResume = async (req: Request, res: Response) => {
@@ -18,16 +19,16 @@ export const analyzeResume = async (req: Request, res: Response) => {
       if (req.file.mimetype === 'application/pdf') {
         try {
           const parsedData = await pdf(buffer);
-          resumeText = parsedData.text || '';
+          resumeText = sanitizeParsedText(parsedData.text || '');
         } catch (parseError: any) {
           console.error('[Resume Parser Error] Failed to parse raw PDF binary content:', parseError);
-          resumeText = buffer.toString('utf8');
+          resumeText = sanitizeParsedText(buffer.toString('utf8'));
         }
       } else {
-        resumeText = buffer.toString('utf8');
+        resumeText = sanitizeParsedText(buffer.toString('utf8'));
       }
     } else {
-      resumeText = req.body.resumeText || '';
+      resumeText = sanitizeParsedText(req.body.resumeText || '');
     }
 
     if (!resumeText.trim()) {
@@ -67,23 +68,227 @@ export const analyzeResume = async (req: Request, res: Response) => {
       const cleaned = cleanJsonText(responseText);
       analysisResult = JSON.parse(cleaned);
     } catch (apiError: any) {
-      console.warn('[Resume Controller] Ollama analysis failed. Falling back to custom mock analysis:', apiError);
+      console.warn('[Resume Controller] Ollama analysis failed. Falling back to dynamic Javascript matching:', apiError);
       
-      const textLen = resumeText.trim().length;
-      const baseScore = Math.min(95, Math.max(45, 60 + (textLen % 20)));
+      const cleanTextJs = (t: string) => t.toLowerCase().replace(/[^a-z0-9\s#+\-\.]/g, ' ').replace(/\s+/g, ' ');
+      const cleanResume = cleanTextJs(resumeText);
+      const resumeWords = new Set(cleanResume.split(' '));
+      
+      // Detect Resume Category (technical vs sales vs hr vs business)
+      const salesKeywords = ['sales', 'revenue', 'quota', 'account executive', 'business development', 'customer success', 'pipeline', 'cold call', 'lead generation', 'b2b', 'b2c', 'account manager', 'deal size', 'deals closed', 'salesforce', 'crm', 'annual contract value', 'acv', 'contract value', 'closed deals', 'prospecting'];
+      const salesCount = salesKeywords.filter(kw => cleanResume.includes(kw)).length;
+      
+      const techKeywords = ['developer', 'software engineer', 'programmer', 'coding', 'frontend', 'backend', 'fullstack', 'devops', 'kubernetes', 'docker', 'aws', 'git', 'github', 'database', 'sql', 'graphql', 'python', 'javascript', 'typescript', 'java', 'c++', 'html', 'css', 'data scientist', 'data engineer'];
+      const techCount = techKeywords.filter(kw => cleanResume.includes(kw)).length;
 
+      const hrKeywords = ['hr', 'human resources', 'talent acquisition', 'recruiting', 'recruitment', 'payroll', 'hris', 'employee relations', 'talent management', 'sourcing', 'workforce planning', 'labor relations'];
+      const hrCount = hrKeywords.filter(kw => cleanResume.includes(kw)).length;
+
+      const bizKeywords = ['marketing', 'finance', 'accounting', 'supply chain', 'logistics', 'operations', 'procurement', 'healthcare', 'medical', 'nursing', 'legal', 'compliance', 'budgeting', 'forecasting', 'auditing'];
+      const bizCount = bizKeywords.filter(kw => cleanResume.includes(kw)).length;
+
+      let category = 'technical';
+      let maxCount = techCount;
+
+      if (salesCount > maxCount) {
+        category = 'sales';
+        maxCount = salesCount;
+      }
+      if (hrCount > maxCount) {
+        category = 'hr';
+        maxCount = hrCount;
+      }
+      if (bizCount > maxCount) {
+        category = 'business';
+        maxCount = bizCount;
+      }
+      if (maxCount === 0) {
+        category = 'technical';
+      }
+      const isSales = category === 'sales';
+      
+      // Skills analysis
+      const techSkills = [
+        'javascript', 'typescript', 'python', 'java', 'c#', 'c++', 'go', 'rust', 'ruby', 'php', 'laravel', 'docker', 'aws', 'kubernetes', 'postgresql', 'mongodb', 'mysql', 'sql', 'redis', 'graphql', 'next.js', 'vue', 'angular', 'express', 'django', 'flask', 'tailwind', 'bootstrap', 'css', 'html', 'git', 'github'
+      ];
+      const salesSkills = [
+        'sales', 'crm', 'salesforce', 'hubspot', 'b2b', 'pipeline', 'cold calling', 'negotiation', 'lead generation', 'prospecting', 'relationship building', 'account management', 'deal closing', 'excel', 'powerpoint', 'tableau', 'public speaking', 'customer service', 'marketing', 'social media'
+      ];
+      
+      const skillsList = isSales ? salesSkills : techSkills;
+      
+      const identified = skillsList.filter(s => {
+        if (s.match(/^[a-z0-9]+$/)) {
+          return resumeWords.has(s);
+        } else {
+          return cleanResume.includes(s);
+        }
+      }).map(s => s.charAt(0).toUpperCase() + s.slice(1));
+      
+      const defaultCloud = isSales ? ['Salesforce', 'CRM', 'B2B Sales', 'Negotiation'] : ['Docker', 'AWS', 'Kubernetes', 'Terraform'];
+      const missing = defaultCloud.filter(s => !identified.map(x => x.toLowerCase()).includes(s.toLowerCase()));
+      
+      // Structural sections
+      const sections = isSales ? ['experience', 'education', 'skills', 'summary'] : ['experience', 'education', 'skills', 'projects', 'summary'];
+      
+      const sectionSynonyms: Record<string, string[]> = {
+        experience: ['experience', 'employment', 'work history', 'career history', 'background', 'professional history', 'work experience', 'history'],
+        education: ['education', 'academic', 'qualification', 'qualifications', 'degree', 'university', 'college', 'studies', 'schooling', 'academics'],
+        skills: ['skills', 'competencies', 'expertise', 'capabilities', 'technologies', 'technical stack', 'tools', 'proficiencies', 'abilities', 'tech stack'],
+        projects: ['projects', 'key projects', 'academic projects', 'personal projects', 'work projects', 'accomplishments', 'creations'],
+        summary: ['summary', 'objective', 'profile', 'about me', 'about']
+      };
+
+      const detectedSections = sections.filter(sec => {
+        const synonyms = sectionSynonyms[sec] || [sec];
+        return synonyms.some(syn => cleanResume.includes(syn));
+      });
+      
+      // Metrics & Verbs (exclude education segment and filter dates)
+      const lowerRes = resumeText.toLowerCase();
+      const eduIndex = lowerRes.indexOf('education');
+      let nonEduText = resumeText;
+      if (eduIndex !== -1) {
+        const nextHeaders = ['work experience', 'experience', 'employment', 'career history', 'professional experience', 'skills', 'projects', 'contact'];
+        let nextIndex = resumeText.length;
+        for (const h of nextHeaders) {
+          const idx = lowerRes.indexOf(h, eduIndex + 10);
+          if (idx !== -1 && idx < nextIndex) nextIndex = idx;
+        }
+        nonEduText = resumeText.slice(0, eduIndex) + resumeText.slice(nextIndex);
+      }
+      
+      const rawMetrics = nonEduText.match(/(?:\b\d+(?:\.\d+)?\+?\s*%\s*(?:\+)?\b|\b(?:usd|inr|rs\.?|\$|₹|£|€)\s*\d+(?:[,\.]\d+)*\+?\s*(?:[kKmMCrRlL])?\b|\b\d+(?:\.\d+)?\+?\s*(?:k|m|cr|l|lakh|lakhs|crore|crores|million|billion|trillion|percent|users|clients|accounts|leads|deals|projects|employees|team|members|regions|territories|quota)\b|\b\d+(?:\.\d+)?\+?\s*(?:[kKmMCrRlL])\+?\b)/gi) || [];
+      const metricsMatches = rawMetrics.filter(m => {
+        const clean = m.trim().toLowerCase();
+        if (/^\d+$/.test(clean)) {
+          const num = parseInt(clean, 10);
+          if (num >= 1990 && num <= 2030) return false;
+        }
+        if (clean.includes('year') || clean.includes('yr')) return false;
+        return true;
+      });
+      const metricsCount = metricsMatches.length;
+      
+      const actionVerbsList = [
+        // --- Tech & Engineering ---
+        'develop', 'developed', 'developing', 'design', 'designed', 'designing', 'engineer', 'engineered', 'engineering',
+        'optimize', 'optimized', 'optimizing', 'build', 'built', 'building', 'implement', 'implemented', 'implementing',
+        'create', 'created', 'creating', 'scale', 'scaled', 'scaling', 'resolve', 'resolved', 'resolving',
+        'automate', 'automated', 'automating', 'integrate', 'integrated', 'integrating', 'architect', 'architected',
+        'spearhead', 'spearheaded', 'spearheading', 'program', 'programmed', 'programming', 'deploy', 'deployed', 'deploying',
+        'monitor', 'monitored', 'monitoring', 'refactor', 'refactored', 'refactoring', 'migrate', 'migrated', 'migrating',
+        'debug', 'debugged', 'debugging', 'configure', 'configured', 'configuring', 'administer', 'administered', 'administering',
+        // --- Sales, BD & Marketing ---
+        'close', 'closed', 'closing', 'achieve', 'achieved', 'achieving', 'generate', 'generated', 'generating',
+        'drive', 'drove', 'driving', 'negotiate', 'negotiated', 'negotiating', 'exceed', 'exceeded', 'exceeding',
+        'increase', 'increased', 'increasing', 'secure', 'secured', 'securing', 'grow', 'grew', 'growing',
+        'launch', 'launched', 'launching', 'expand', 'expanded', 'expanding', 'prospect', 'prospected', 'prospecting',
+        'pitch', 'pitched', 'pitching', 'partner', 'partnered', 'partnering', 'present', 'presented', 'presenting',
+        'acquire', 'acquired', 'acquiring', 'win', 'won', 'winning', 'retain', 'retained', 'retaining',
+        'establish', 'established', 'establishing', 'initiate', 'initiated', 'initiating', 'target', 'targeted', 'targeting',
+        'maximize', 'maximized', 'maximizing', 'promote', 'promoted', 'promoting',
+        // --- Management, Leadership & Operations ---
+        'lead', 'led', 'leading', 'manage', 'managed', 'managing', 'improve', 'improved', 'improving',
+        'deliver', 'delivered', 'delivering', 'collaborate', 'collaborated', 'collaborating', 'supervise', 'supervised', 'supervising',
+        'coordinate', 'coordinated', 'coordinating', 'direct', 'directed', 'directing', 'organize', 'organized', 'organizing',
+        'guide', 'guided', 'guiding', 'facilitate', 'facilitated', 'facilitating', 'execute', 'executed', 'executing',
+        'conduct', 'conducted', 'conducting', 'support', 'supported', 'supporting', 'mentor', 'mentored', 'mentoring',
+        'train', 'trained', 'training', 'delegate', 'delegated', 'delegating', 'recruit', 'recruited', 'recruiting',
+        'restructure', 'restructured', 'restructuring', 'budget', 'budgeted', 'budgeting', 'schedule', 'scheduled', 'scheduling',
+        // --- Finance, Legal & Compliance ---
+        'audit', 'audited', 'auditing', 'analyze', 'analyzed', 'analyzing', 'draft', 'drafted', 'drafting',
+        'review', 'reviewed', 'reviewing', 'forecast', 'forecasted', 'forecasting', 'balance', 'balanced', 'balancing',
+        'allocate', 'allocated', 'allocating', 'enforce', 'enforced', 'enforcing', 'mitigate', 'mitigated', 'mitigating',
+        'assess', 'assessed', 'assessing', 'authorize', 'authorized', 'authorizing', 'reconcile', 'reconciled', 'reconciling',
+        // --- Healthcare, Service & Support ---
+        'assist', 'assisted', 'assisting', 'diagnose', 'diagnosed', 'diagnosing', 'treat', 'treated', 'treating',
+        'counsel', 'counseled', 'counseling', 'advocate', 'advocated', 'advocating', 'dispatch', 'dispatched', 'dispatching',
+        'inspect', 'inspected', 'inspecting', 'maintain', 'maintained', 'maintaining', 'standardize', 'standardized', 'standardizing'
+      ];
+      const wordsArr = cleanResume.split(' ');
+      const verbCount = wordsArr.filter(w => actionVerbsList.includes(w)).length;
+      
+      // Calculate scores
+      const formattingScore = Math.min(100, 50 + (detectedSections.length * 12));
+      
+      const spacingMatches = resumeText.match(/[a-zA-Z],[a-zA-Z]|[a-zA-Z]\.[a-zA-Z]/g) || [];
+      const runonMatches = cleanResume.split(' ').filter(w => w.length > 15 && !w.includes('-') && !w.includes('/') && !w.includes('.'));
+      const grammarScore = Math.max(65, 100 - (spacingMatches.length * 3 + runonMatches.length * 5));
+      
+      const skillsScore = Math.min(100, 40 + (identified.length * 10));
+      const salesKeywordsSet = new Set([
+        'sales', 'revenue', 'quota', 'crm', 'salesforce', 'hubspot', 'lead generation', 'cold calling', 'b2b sales', 'b2c sales', 'pipeline management', 'account management', 'deal closing', 'customer success', 'prospecting', 'negotiation', 'contracts', 'annual contract value', 'acv', 'contract value', 'saas', 'enterprise sales', 'growth hacking', 'branding', 'marketing strategy', 'seo', 'sem', 'copywriting', 'google analytics', 'social media marketing', 'email marketing', 'market research', 'digital marketing', 'lead scoring', 'conversion rate optimization', 'cro'
+      ]);
+      const detectedSalesSkills = identified.filter(s => salesKeywordsSet.has(s.toLowerCase()));
+      const salesScore = Math.min(100, detectedSalesSkills.length * 20);
+      const projectScore = isSales ? salesScore : (detectedSections.includes('projects') ? 85 : 50);
+      const experienceScore = Math.min(100, Math.round((verbCount / 15) * 100));
+      const achievementScore = Math.min(100, Math.round((metricsCount / 6) * 100));
+      
+      const baseScore = Math.round((formattingScore * 0.2) + (skillsScore * 0.2) + (experienceScore * 0.3) + (projectScore * 0.15) + (achievementScore * 0.15));
+      const atsScore = Math.round(formattingScore * 0.7 + baseScore * 0.3);
+      
+      const strengths: string[] = [];
+      const weaknesses: string[] = [];
+      const suggestions: string[] = [];
+      
+      if (detectedSections.includes('skills')) strengths.push('Formatted skills directory is present');
+      if (identified.length >= 2) strengths.push(`Strong core ${category} alignment (${identified.slice(0, 3).join(', ')} foundations)`);
+      if (metricsCount >= 2) strengths.push('Quantitative achievement metrics identified');
+      if (detectedSections.includes('experience')) strengths.push('Clean employment history timeline structures');
+      
+      if (strengths.length < 2) strengths.push('Clean layout density template structure');
+      
+      if (metricsCount === 0) {
+        weaknesses.push('Lack of metrics in experience bullet points');
+        const metricEg = category === 'sales' ? 'sales quota hit, deals closed, conversion rate' 
+                       : category === 'hr' ? 'headcount hired, time-to-fill, compliance rate'
+                       : category === 'business' ? 'operating budget managed, inventory reduction'
+                       : 'optimized queries, increased efficiency';
+        suggestions.push(`Quantify accomplishments (e.g. ${metricEg} by X%)`);
+      }
+      if (verbCount < 3) {
+        weaknesses.push('Low usage of professional action verbs');
+        suggestions.push('Use active bullet points starting with strong action verbs (e.g., Developed, Built, Managed)');
+      }
+      if (missing.length > 0) {
+        const keywordCategory = category === 'sales' ? 'key business competencies'
+                              : category === 'hr' ? 'HR operations platforms/HRIS keywords'
+                              : category === 'business' ? 'business management/ERP terms'
+                              : 'cloud deployment keywords';
+        weaknesses.push(`Missing ${keywordCategory}`);
+        suggestions.push(`Add technical keywords explicitly (e.g., ${missing.slice(0, 2).join(', ')})`);
+      }
+      
+      if (weaknesses.length === 0) {
+        weaknesses.push('Minor heading capitalization inconsistencies');
+        suggestions.push('Align heading typography sizes');
+      }
+      
       analysisResult = {
         score: baseScore,
-        atsScore: Math.max(30, baseScore - 8),
-        formattingAnalysis: { rating: 'Good', score: 85, issues: ['Adjust page margins slightly'], details: 'Overall clean template structural flow.' },
-        grammarAnalysis: { rating: 'Excellent', score: 95, issues: [], details: 'Zero active grammatical syntax errors identified.' },
-        skillAnalysis: { rating: 'Medium Alignment', score: 70, identifiedSkills: ['React', 'TypeScript', 'Node.js', 'PostgreSQL'], missingSkills: ['Docker', 'AWS', 'GraphQL'], details: 'Add cloud architecture markers to align with standard criteria.' },
-        projectAnalysis: { rating: 'Good', score: 75, details: 'Personal projects display strong frontend layouts.', recommendations: ['Quantify database scaling metrics.'] },
-        experienceAnalysis: { rating: 'Good', score: 78, details: 'Clear job responsibilities track.', recommendations: ['Use active bullet points starting with verbs.'] },
-        achievementAnalysis: { rating: 'Needs Improvement', score: 40, details: 'Accomplishments are too brief and not quantified.', recommendations: ['Inject quantitative results, e.g. optimized latencies by 20%.'] },
-        strengths: ['React/TypeScript foundations', 'Clean single-column formatting flow'],
-        weaknesses: ['Lack of metrics in experience bullet points', 'Missing cloud deployment keywords'],
-        suggestions: ['Quantify project metrics', 'Add Git and Docker keywords explicitly']
+        atsScore,
+        formattingAnalysis: { rating: formattingScore >= 80 ? 'Good' : 'Needs Improvement', score: formattingScore, issues: detectedSections.includes('summary') ? [] : ['Add professional summary header'], details: 'Layout verification tracks standard single column templates.' },
+        grammarAnalysis: { rating: 'Excellent', score: grammarScore, issues: [], details: 'No critical spelling syntax issues found.' },
+        skillAnalysis: { rating: skillsScore >= 80 ? 'High Alignment' : 'Medium Alignment', score: skillsScore, identifiedSkills: identified, missingSkills: missing, details: `Identified ${identified.length} skills. We recommend adding ${missing.slice(0, 2).join(', ')} to boost technical alignment.` },
+        projectAnalysis: { 
+          rating: isSales ? (projectScore >= 80 ? 'Good' : 'Needs Improvement') : (projectScore >= 80 ? 'Good' : 'Needs Improvement'), 
+          score: projectScore, 
+          details: isSales 
+            ? `Evaluated your business capabilities, sales tools, and deal pipeline alignments. Found ${detectedSalesSkills.length} sales competencies (${detectedSalesSkills.slice(0, 3).join(', ')}).` 
+            : 'Personal project contexts mapped.', 
+          recommendations: isSales 
+            ? (missing.filter(s => salesKeywordsSet.has(s.toLowerCase())).length > 0 
+                ? [`Consider adding key sales skills: ${missing.filter(s => salesKeywordsSet.has(s.toLowerCase())).slice(0, 2).join(', ')}.`] 
+                : [])
+            : (projectScore < 80 ? ['Add dedicated Projects header segment'] : []) 
+        },
+        experienceAnalysis: { rating: experienceScore >= 80 ? 'Good' : 'Needs Improvement', score: experienceScore, details: `Found ${verbCount} professional action verbs.`, recommendations: verbCount < 4 ? ['Use stronger action verbs to start experience bullets'] : [] },
+        achievementAnalysis: { rating: achievementScore >= 80 ? 'Good' : 'Needs Improvement', score: achievementScore, details: `Identified ${metricsCount} quantified accomplishments.`, recommendations: metricsCount < 2 ? ['Incorporate numerical metrics into project descriptions'] : [] },
+        strengths,
+        weaknesses,
+        suggestions
       };
     }
 
@@ -194,134 +399,6 @@ export const calculateAtsScore = async (req: Request, res: Response) => {
   }
 };
 
-// Live Resume Tailoring with mock fallback
-export const tailorResume = async (req: Request, res: Response) => {
-  try {
-    const { resumeText, jobDescription } = req.body;
-
-    if (!jobDescription) {
-      return res.status(400).json({ error: 'jobDescription is required.' });
-    }
-
-    const inputResume = resumeText || 'SUMMARY\nSoftware Engineer with experience in React.';
-    let resultObj;
-
-    try {
-      const systemPrompt = `
-        You are an expert career consultant. Tailor the input resume to maximize its alignment with the job description.
-        
-        HUMAN-WRITING STYLE RULES:
-        - Avoid obvious AI buzzwords and clichés (do NOT use: "spearhead", "revolutionize", "testament", "proven track record", "highly skilled", "synergy", "dynamic", "streamline", "foster", "leverage", "passionately", "expertly", "beacon", "game-changer").
-        - Use simple, direct action verbs (e.g. "Built", "Developed", "Wrote", "Reduced", "Optimized", "Integrated", "Fixed", "Coordinated").
-        - Keep the tone factual, objective, and grounded, exactly how a professional human engineer writes.
-        
-        EVALUATION INSTRUCTIONS:
-        You must track and report an "evidenceType" level for every tailored statement or bullet point you construct:
-        1. VERIFIED: Claim is directly supported by text in the summary or skills of the original resume.
-        2. PROJECT_MATCH: Claim is supported by experiences, projects, or work history in the original resume.
-        3. SUGGESTED: Recommended addition matching the job description expectations. The user should consider this for future growth, but it is not explicitly proven.
-        4. NOT_ADDED: Excluded statements. If a job requirement has absolutely no evidence in the resume (e.g. asking for 5 years of Kubernetes when the user has never written cloud scripts), do NOT add it as a fake claim. Instead, report it under NOT_ADDED to prevent interviews dishonesty.
-
-        Respond in strict JSON format matching this interface:
-
-        interface TailoredResumeResult {
-          originalResumeId: string;
-          tailoredResumeId: string;
-          matchScoreBefore: number;
-          matchScoreAfter: number;
-          tailoredResumeText: string;
-          keywordSuggestions: Array<{ keyword: string; occurrencesAdded: number; impact: string }>;
-          sectionImprovements: Array<{ section: string; original: string; improved: string; reason: string }>;
-          evidenceStatements: Array<{
-            statement: string; // The tailored claim/sentence
-            evidenceType: 'VERIFIED' | 'PROJECT_MATCH' | 'SUGGESTED' | 'NOT_ADDED';
-            details: string; // Contextual reason, e.g. "Found in resume experience", "Suggested based on JD", etc.
-          }>;
-          downloadUrl: string;
-        }
-      `;
-
-      const responseText = await queryOllama(
-        systemPrompt,
-        `Original Resume:\n${inputResume}\n\nTarget Job Description:\n${jobDescription}`
-      );
-      const cleaned = cleanJsonText(responseText);
-      resultObj = JSON.parse(cleaned);
-    } catch (apiError: any) {
-      console.warn('[Resume Controller] Ollama tailoring failed. Falling back to dynamic mock merging:', apiError);
-      
-      const originalText = inputResume;
-      let tailoredText = originalText;
-
-      const detectedKeywords = [];
-      const jdUpper = (jobDescription || '').toUpperCase();
-      if (jdUpper.includes('LARAVEL')) detectedKeywords.push('Laravel');
-      if (jdUpper.includes('DOCKER')) detectedKeywords.push('Docker');
-      if (jdUpper.includes('GIT')) detectedKeywords.push('Git');
-      if (jdUpper.includes('MVC')) detectedKeywords.push('MVC Architecture');
-
-      if (detectedKeywords.length > 0) {
-        const skillsIndex = tailoredText.toUpperCase().indexOf('SKILLS');
-        if (skillsIndex !== -1) {
-          const insertPos = skillsIndex + 6;
-          tailoredText = tailoredText.slice(0, insertPos) + '\n- ' + detectedKeywords.join(', ') + '\n' + tailoredText.slice(insertPos);
-        } else {
-          tailoredText = tailoredText + '\n\nSKILLS:\n- ' + detectedKeywords.join(', ');
-        }
-      }
-
-      // Add a dynamic experience bullet
-      const expIndex = tailoredText.toUpperCase().indexOf('EXPERIENCE');
-      if (expIndex !== -1) {
-        const insertPos = expIndex + 10;
-        tailoredText = tailoredText.slice(0, insertPos) + '\n• Developed backend modules and coordinated codebase changes using ' + (detectedKeywords.includes('Git') ? 'Git' : 'version control tools') + '.\n' + tailoredText.slice(insertPos);
-      } else {
-        tailoredText = tailoredText + '\n\nEXPERIENCE:\n• Developed backend features using ' + (detectedKeywords.join(' and ') || 'standard web practices') + '.';
-      }
-
-      resultObj = {
-        originalResumeId: 'original-resume-id',
-        tailoredResumeId: `tailored-${Date.now()}`,
-        matchScoreBefore: 62,
-        matchScoreAfter: 94,
-        tailoredResumeText: tailoredText,
-        keywordSuggestions: [
-          { keyword: detectedKeywords[0] || 'Docker', occurrencesAdded: 2, impact: 'Matches core framework requirements' }
-        ],
-        sectionImprovements: [
-          { section: 'Skills', original: 'Original Skills List', improved: `Added: ${detectedKeywords.join(', ') || 'Docker'}`, reason: 'Matches job description framework expectations' }
-        ],
-        evidenceStatements: [
-          { statement: 'React and TypeScript development', evidenceType: 'VERIFIED', details: 'Found in summary and skills of original resume.' },
-          { statement: 'PostgreSQL database query indexing', evidenceType: 'PROJECT_MATCH', details: 'Verified in database project logs.' },
-          { statement: `${detectedKeywords[0] || 'Docker'} containerized environments`, evidenceType: 'SUGGESTED', details: 'Suggested based on deployment requirements.' },
-          { statement: 'Kubernetes cloud setups', evidenceType: 'NOT_ADDED', details: 'Excluded: No evidence of Kubernetes found in original resume.' }
-        ],
-        downloadUrl: '/api/resume/download/mock-tailored.pdf'
-      };
-    }
-
-    resultObj.originalResumeId = 'original-resume-id';
-    resultObj.tailoredResumeId = `tailored-${Date.now()}`;
-    resultObj.downloadUrl = '/api/resume/download/mock-tailored.pdf';
-
-    // Deduct 2 credits for tailoring
-    try {
-      const userId = await getUserIdFromRequest(req);
-      await prisma.user.update({
-        where: { id: userId },
-        data: { credits: { decrement: 2 } }
-      });
-    } catch (e) {
-      console.warn('[Resume Controller] Failed to decrement user credits:', e);
-    }
-
-    return res.json(resultObj);
-  } catch (error: any) {
-    console.error('[Resume Controller] Error tailoring resume:', error);
-    return res.status(500).json({ error: 'Resume tailoring failed.', message: error.message });
-  }
-};
 
 // Retrieve the most recently analyzed resume details from the database
 export const getLatestResume = async (req: Request, res: Response) => {

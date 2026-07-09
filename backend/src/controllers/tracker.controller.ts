@@ -58,24 +58,31 @@ const seedDefaultApplications = async (userId: string) => {
 export const getApplications = async (req: Request, res: Response) => {
   try {
     const userId = await getUserIdFromRequest(req);
+    const { jobId } = req.query;
+    
+    const whereClause: any = { userId };
+    if (jobId) {
+      if (jobId === 'general') {
+        whereClause.jobId = null;
+      } else {
+        whereClause.jobId = jobId as string;
+      }
+    }
     
     let dbApps = await prisma.application.findMany({
-      where: { userId },
+      where: whereClause,
       orderBy: { createdAt: 'desc' }
     });
 
-    // Auto-seed if the database tracker table is empty
-    if (dbApps.length === 0) {
-      await seedDefaultApplications(userId);
-      dbApps = await prisma.application.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' }
-      });
-    }
+    // Return empty list if no applications exist - no mock auto-seeding
 
     // Format dates to simple strings for client compatibility
     const formattedApps = dbApps.map(app => ({
       id: app.id,
+      jobId: app.jobId || null,
+      candidateName: app.candidateName || '',
+      candidateEmail: app.candidateEmail || '',
+      candidatePhone: app.candidatePhone || '',
       company: app.company,
       role: app.role,
       salary: app.salary || '',
@@ -96,7 +103,7 @@ export const getApplications = async (req: Request, res: Response) => {
 export const createApplication = async (req: Request, res: Response) => {
   try {
     const userId = await getUserIdFromRequest(req);
-    const { company, role, salary, status, deadline, applicationDate, interviewDate, notes } = req.body;
+    const { company, role, salary, status, deadline, applicationDate, interviewDate, notes, jobId, candidateName, candidateEmail, candidatePhone } = req.body;
 
     if (!company || !role) {
       return res.status(400).json({ error: 'Company and Role are required' });
@@ -105,6 +112,10 @@ export const createApplication = async (req: Request, res: Response) => {
     const created = await prisma.application.create({
       data: {
         userId,
+        jobId: jobId || null,
+        candidateName: candidateName || '',
+        candidateEmail: candidateEmail || '',
+        candidatePhone: candidatePhone || '',
         company,
         role,
         salary: salary || '',
@@ -118,6 +129,10 @@ export const createApplication = async (req: Request, res: Response) => {
 
     return res.status(201).json({
       id: created.id,
+      jobId: created.jobId || null,
+      candidateName: created.candidateName || '',
+      candidateEmail: created.candidateEmail || '',
+      candidatePhone: created.candidatePhone || '',
       company: created.company,
       role: created.role,
       salary: created.salary || '',
@@ -146,9 +161,17 @@ export const updateApplication = async (req: Request, res: Response) => {
 
     // Format dates properly for database input
     const dbUpdates: any = { ...updates };
+    delete dbUpdates.id;
+    delete dbUpdates.userId;
+    delete dbUpdates.createdAt;
+    
     if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline ? new Date(updates.deadline) : null;
     if (updates.applicationDate !== undefined) dbUpdates.applicationDate = new Date(updates.applicationDate);
     if (updates.interviewDate !== undefined) dbUpdates.interviewDate = updates.interviewDate ? new Date(updates.interviewDate) : null;
+    if (updates.jobId !== undefined) dbUpdates.jobId = updates.jobId || null;
+    if (updates.candidateName !== undefined) dbUpdates.candidateName = updates.candidateName || '';
+    if (updates.candidateEmail !== undefined) dbUpdates.candidateEmail = updates.candidateEmail || '';
+    if (updates.candidatePhone !== undefined) dbUpdates.candidatePhone = updates.candidatePhone || '';
 
     const updated = await prisma.application.update({
       where: { id },
@@ -157,6 +180,10 @@ export const updateApplication = async (req: Request, res: Response) => {
 
     return res.json({
       id: updated.id,
+      jobId: updated.jobId || null,
+      candidateName: updated.candidateName || '',
+      candidateEmail: updated.candidateEmail || '',
+      candidatePhone: updated.candidatePhone || '',
       company: updated.company,
       role: updated.role,
       salary: updated.salary || '',

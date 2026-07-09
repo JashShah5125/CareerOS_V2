@@ -33,6 +33,12 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    // Fetch subscription plan
+    const sub = await prisma.subscription.findFirst({
+      where: { userId: user.id }
+    });
+    const plan = sub ? sub.plan : 'FREE';
+
     return res.json({
       token: `jwt-token-${user.id}`,
       user: {
@@ -43,7 +49,9 @@ export const login = async (req: Request, res: Response) => {
         lastName: user.profile?.lastName || 'Doe',
         headline: user.profile?.headline || '',
         targetRole: user.profile?.targetRole || '',
-        avatarUrl: user.profile?.avatarUrl
+        avatarUrl: user.profile?.avatarUrl,
+        isGoogleUser: user.passwordHash === 'oauth-google-register',
+        plan
       }
     });
   } catch (error: any) {
@@ -87,6 +95,12 @@ export const register = async (req: Request, res: Response) => {
       include: { profile: true }
     });
 
+    // Fetch subscription plan
+    const sub = await prisma.subscription.findFirst({
+      where: { userId: user.id }
+    });
+    const plan = sub ? sub.plan : 'FREE';
+
     return res.json({
       message: 'User registered successfully',
       token: `jwt-token-${user.id}`,
@@ -98,7 +112,9 @@ export const register = async (req: Request, res: Response) => {
         lastName: user.profile?.lastName || '',
         headline: '',
         targetRole: '',
-        avatarUrl: user.profile?.avatarUrl
+        avatarUrl: user.profile?.avatarUrl,
+        isGoogleUser: false,
+        plan
       }
     });
   } catch (error: any) {
@@ -117,7 +133,7 @@ export const googleLogin = async (req: Request, res: Response) => {
     }
 
     // Load Client ID configuration
-    const clientId = process.env.GOOGLE_CLIENT_ID || '141071275990-21u66g1c3f25n93j7h4j5mdf3u34d9h9.apps.googleusercontent.com';
+    const clientId = process.env.GOOGLE_CLIENT_ID || '591999660576-rurvqabs4ok694i5nv30r2tb8rn4n46t.apps.googleusercontent.com';
     const client = new OAuth2Client(clientId);
 
     // Verify token signature against Google certificates
@@ -159,6 +175,12 @@ export const googleLogin = async (req: Request, res: Response) => {
       });
     }
 
+    // Fetch subscription plan
+    const sub = await prisma.subscription.findFirst({
+      where: { userId: user.id }
+    });
+    const plan = sub ? sub.plan : 'FREE';
+
     return res.json({
       token: `jwt-token-${user.id}`,
       user: {
@@ -169,7 +191,9 @@ export const googleLogin = async (req: Request, res: Response) => {
         lastName: user.profile?.lastName || '',
         headline: user.profile?.headline || '',
         targetRole: user.profile?.targetRole || '',
-        avatarUrl: user.profile?.avatarUrl
+        avatarUrl: user.profile?.avatarUrl,
+        isGoogleUser: true,
+        plan
       }
     });
   } catch (error: any) {
@@ -190,13 +214,21 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
 export const getProfile = async (req: Request, res: Response) => {
   try {
-    const profile = await prisma.profile.findFirst({
+    const userId = await getUserIdFromRequest(req);
+    const profile = await prisma.profile.findUnique({
+      where: { userId },
       include: { user: true }
     });
 
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
+
+    // Fetch subscription plan
+    const sub = await prisma.subscription.findFirst({
+      where: { userId: profile.userId }
+    });
+    const plan = sub ? sub.plan : 'FREE';
 
     return res.json({
       id: profile.userId,
@@ -206,7 +238,9 @@ export const getProfile = async (req: Request, res: Response) => {
       lastName: profile.lastName || '',
       headline: profile.headline || '',
       targetRole: profile.targetRole || '',
-      avatarUrl: profile.avatarUrl
+      avatarUrl: profile.avatarUrl,
+      isGoogleUser: profile.user.passwordHash === 'oauth-google-register',
+      plan
     });
   } catch (error: any) {
     console.error('[Auth Controller] Error retrieving profile:', error);
@@ -218,7 +252,10 @@ export const updateProfile = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, headline, targetRole } = req.body;
     
-    const profile = await prisma.profile.findFirst();
+    const userId = await getUserIdFromRequest(req);
+    const profile = await prisma.profile.findUnique({
+      where: { userId }
+    });
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
@@ -244,7 +281,8 @@ export const updateProfile = async (req: Request, res: Response) => {
         lastName: updated.lastName || '',
         headline: updated.headline || '',
         targetRole: updated.targetRole || '',
-        avatarUrl: updated.avatarUrl
+        avatarUrl: updated.avatarUrl,
+        isGoogleUser: updated.user.passwordHash === 'oauth-google-register'
       }
     });
   } catch (error: any) {
@@ -256,20 +294,31 @@ export const updateProfile = async (req: Request, res: Response) => {
 // Add database credits on purchase
 export const addCredits = async (req: Request, res: Response) => {
   try {
-    const { amount } = req.body;
+    const { amount, transactionId, price } = req.body;
     if (!amount || isNaN(Number(amount))) {
       return res.status(400).json({ error: 'Valid amount is required.' });
     }
 
-    const profile = await prisma.profile.findFirst();
-    if (!profile) {
-      return res.status(404).json({ error: 'User profile not found.' });
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized request' });
     }
 
     const updated = await prisma.user.update({
-      where: { id: profile.userId },
+      where: { id: userId },
       data: { credits: { increment: Number(amount) } }
     });
+
+    if (transactionId) {
+      await prisma.payment.create({
+        data: {
+          userId,
+          amount: Number(price) || (Number(amount) * 1.99),
+          status: 'SUCCESS',
+          transactionId: transactionId
+        }
+      });
+    }
 
     return res.json({ credits: updated.credits });
   } catch (error: any) {

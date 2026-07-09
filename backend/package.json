@@ -4,11 +4,12 @@
   "description": "Backend services for AI Career Copilot",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "db:push": "prisma db push"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -19,7 +20,8 @@
     "google-auth-library": "^10.9.0",
     "mammoth": "^1.12.0",
     "multer": "^2.2.0",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "prisma": "^5.10.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -28,7 +30,6 @@
     "@types/node": "^20.11.24",
     "@types/pdf-parse": "^1.1.5",
     "nodemon": "^3.1.0",
-    "prisma": "^5.10.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }

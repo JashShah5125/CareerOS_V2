@@ -35,7 +35,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
       const google = (window as any).google;
       if (google && google.accounts && google.accounts.id) {
         google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '141071275990-21u66g1c3f25n93j7h4j5mdf3u34d9h9.apps.googleusercontent.com',
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '591999660576-rurvqabs4ok694i5nv30r2tb8rn4n46t.apps.googleusercontent.com',
           callback: handleGoogleCallback
         });
 

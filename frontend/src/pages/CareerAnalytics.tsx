@@ -1,28 +1,37 @@
 import { useEffect, useState } from 'react';
-import { trackerApi, resumeApi, ApplicationCard, ResumeAnalysis } from '../api';
+import { trackerApi, resumeApi, jobApi, ApplicationCard, ResumeAnalysis, JobDescriptionRecord } from '../api';
 import Card from '../components/Card';
 import MetricBar from '../components/MetricBar';
 import { TrendingUp, Layers, Compass, CheckCircle, Calendar, Briefcase, Award } from 'lucide-react';
 
 export default function CareerAnalytics() {
   const [apps, setApps] = useState<ApplicationCard[]>([]);
+  const [jobs, setJobs] = useState<JobDescriptionRecord[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<string>('all');
   const [latestResume, setLatestResume] = useState<ResumeAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([trackerApi.list(), resumeApi.getLatest()])
-      .then(([appsRes, resumeRes]) => {
+    Promise.all([trackerApi.list(), resumeApi.getLatest(), jobApi.list()])
+      .then(([appsRes, resumeRes, jobsRes]) => {
         setApps(appsRes);
         setLatestResume(resumeRes);
+        setJobs(jobsRes);
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, []);
 
-  const totalApps = apps.length;
-  const assessmentCount = apps.filter(a => a.status === 'ASSESSMENT' || a.status === 'INTERVIEW' || a.status === 'OFFER').length;
-  const interviewCount = apps.filter(a => a.status === 'INTERVIEW' || a.status === 'OFFER' || a.interviewDate).length;
-  const offerCount = apps.filter(a => a.status === 'OFFER').length;
+  const filteredApps = apps.filter(app => {
+    if (selectedJobId === 'all') return true;
+    if (selectedJobId === 'general') return app.jobId === null;
+    return app.jobId === selectedJobId;
+  });
+
+  const totalApps = filteredApps.length;
+  const assessmentCount = filteredApps.filter(a => a.status === 'ASSESSMENT' || a.status === 'INTERVIEW' || a.status === 'OFFER').length;
+  const interviewCount = filteredApps.filter(a => a.status === 'INTERVIEW' || a.status === 'OFFER' || a.interviewDate).length;
+  const offerCount = filteredApps.filter(a => a.status === 'OFFER').length;
 
   // Calculate live conversion percentages
   const interviewRate = totalApps > 0 ? (interviewCount / totalApps) * 100 : 0;
@@ -64,7 +73,7 @@ export default function CareerAnalytics() {
   };
 
   const trendData = getLast6Months();
-  apps.forEach(app => {
+  filteredApps.forEach(app => {
     const dateStr = app.applicationDate;
     if (dateStr) {
       const parts = dateStr.split('-');
@@ -124,7 +133,7 @@ export default function CareerAnalytics() {
     const milestones: Array<{ id: string; title: string; date: string; statusText: string; color: string }> = [];
 
     // Check for offers
-    apps.filter(a => a.status === 'OFFER').forEach(app => {
+    filteredApps.filter(a => a.status === 'OFFER').forEach(app => {
       milestones.push({
         id: `milestone-offer-${app.id}`,
         title: `${app.company} Job Offer Received!`,
@@ -135,7 +144,7 @@ export default function CareerAnalytics() {
     });
 
     // Check for interviews
-    apps.filter(a => a.status === 'INTERVIEW').forEach(app => {
+    filteredApps.filter(a => a.status === 'INTERVIEW').forEach(app => {
       milestones.push({
         id: `milestone-interview-${app.id}`,
         title: `${app.company} Technical Panels`,
@@ -164,9 +173,27 @@ export default function CareerAnalytics() {
 
   return (
     <div>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1>Career Analytics</h1>
-        <p>Monitor your job application flow, interview conversions, resume performance ratings, and professional skill metrics.</p>
+      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1>Career Analytics</h1>
+          <p>Monitor your job application flow, interview conversions, resume performance ratings, and professional skill metrics.</p>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 1rem' }}>
+          <label style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>Active Workspace Board:</label>
+          <select 
+            value={selectedJobId} 
+            onChange={(e) => setSelectedJobId(e.target.value)}
+            className="form-input"
+            style={{ minWidth: '240px', height: '36px', padding: '0 0.5rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)' }}
+          >
+            <option value="all">🌐 All Job Boards</option>
+            <option value="general">📁 General Tracker Board</option>
+            {jobs.map(j => (
+              <option key={j.id} value={j.id}>💼 {j.company} - {j.title}</option>
+            ))}
+          </select>
+        </div>
       </header>
 
       {/* Conversion Rate Overview Cards */}

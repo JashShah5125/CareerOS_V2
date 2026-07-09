@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://YOUR_BACKEND_URL.vercel.app/api/$1"
+    },
+    {
+      "source": "/analyze_resume",
+      "destination": "https://YOUR_BACKEND_URL.vercel.app/analyze_resume"
+    },
+    {
+      "source": "/analyze_job",
+      "destination": "https://YOUR_BACKEND_URL.vercel.app/analyze_job"
+    },
+    {
+      "source": "/generate_cover_letter",
+      "destination": "https://YOUR_BACKEND_URL.vercel.app/generate_cover_letter"
+    },
+    {
+      "source": "/tailor_resume",
+      "destination": "https://YOUR_BACKEND_URL.vercel.app/tailor_resume"
+    },
+    {
+      "source": "/generate_interview_questions",
+      "destination": "https://YOUR_BACKEND_URL.vercel.app/generate_interview_questions"
+    },
+    {
+      "source": "/calculate_ats_score",
+      "destination": "https://YOUR_BACKEND_URL.vercel.app/calculate_ats_score"
+    }
+  ]
+}

@@ -149,56 +149,173 @@ export default function ResumeAnalyzer() {
           </div>
 
           {/* Scores Overview Row */}
-          <div className="grid-3">
-            <Card style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '2rem 1.5rem' }}>
-              <span className="metric-title" style={{ marginBottom: '1rem' }}>Overall Resume Score</span>
-              <div style={{
-                position: 'relative',
-                width: '120px',
-                height: '120px',
-                borderRadius: '50%',
-                border: '8px solid var(--border)',
-                borderTopColor: 'var(--success)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '1rem'
-              }}>
-                <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--success)' }}>{analysis.score || 0}</span>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Ranked top 15% for modern SaaS developer roles</p>
-            </Card>
+          {/* Scores Overview Row */}
+          <div className="grid-2" style={{ alignItems: 'stretch', gap: '1.5rem' }}>
+            {/* Left Column: Circular Progress Rings Stack */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', justifyContent: 'space-between' }}>
+              <Card style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '2rem 1.5rem', height: '48%' }}>
+                <span className="metric-title" style={{ marginBottom: '1rem' }}>Resume Quality Score</span>
+                <div style={{ position: 'relative', width: '110px', height: '110px', marginBottom: '1rem' }}>
+                  <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%' }}>
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="var(--border)"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke={analysis.score >= 80 ? 'var(--success)' : analysis.score >= 60 ? 'var(--warning)' : 'var(--danger)'}
+                      strokeDasharray={`${analysis.score || 0}, 100`}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    fontSize: '1.75rem',
+                    fontWeight: 800,
+                    color: analysis.score >= 80 ? 'var(--success)' : analysis.score >= 60 ? 'var(--warning)' : 'var(--danger)'
+                  }}>
+                    {analysis.score || 0}
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.3' }}>
+                  This score estimates relative resume alignment; it is not a hiring probability.
+                </p>
+              </Card>
 
-            <Card style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '2rem 1.5rem' }}>
-              <span className="metric-title" style={{ marginBottom: '1rem' }}>ATS Parser Score</span>
-              <div style={{
-                position: 'relative',
-                width: '120px',
-                height: '120px',
-                borderRadius: '50%',
-                border: '8px solid var(--border)',
-                borderTopColor: 'var(--accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '1rem'
-              }}>
-                <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent)' }}>{analysis.atsScore || 0}</span>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Standard parse compatibility metrics met</p>
-            </Card>
+              <Card style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '2rem 1.5rem', height: '48%' }}>
+                <span className="metric-title" style={{ marginBottom: '1rem' }}>ATS-friendly Formatting (Heuristics)</span>
+                <div style={{ position: 'relative', width: '110px', height: '110px', marginBottom: '1rem' }}>
+                  <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%' }}>
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="var(--border)"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="var(--accent)"
+                      strokeDasharray={`${analysis.atsScore || 0}, 100`}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    fontSize: '1.75rem',
+                    fontWeight: 800,
+                    color: 'var(--accent)'
+                  }}>
+                    {analysis.atsScore || 0}
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.3' }}>
+                  Heuristic checks for headings, standard dates, column structures, and graphics.
+                </p>
+              </Card>
+            </div>
 
-            {/* Sub-criteria Scores */}
-            <Card title="Structural Diagnostics">
-              <MetricBar label="Formatting & Layout" value={analysis.formattingAnalysis?.score || 0} />
-              <MetricBar label="Grammar & Spellcheck" value={analysis.grammarAnalysis?.score || 0} />
-              <MetricBar label="Project Descriptions" value={analysis.projectAnalysis?.score || 0} />
-              <MetricBar label="Work Experience Depth" value={analysis.experienceAnalysis?.score || 0} />
-              <MetricBar label="Achievement Metrics" value={analysis.achievementAnalysis?.score || 0} />
+            {/* Right Column: Detailed Diagnostics */}
+            <Card title="Structural Diagnostics" subtitle="Formula: (Structure × 40%) + (Verbs × 30%) + (Metrics × 30%)">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div>
+                  <MetricBar label="Formatting & Layout" value={analysis.formattingAnalysis?.score || 0} />
+                  {analysis.formattingAnalysis?.details && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.25rem', paddingLeft: '0.25rem', lineHeight: '1.4' }}>
+                      {analysis.formattingAnalysis.details}
+                    </p>
+                  )}
+                  {analysis.formattingAnalysis?.issues && analysis.formattingAnalysis.issues.length > 0 && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--danger)', marginTop: '0.15rem', paddingLeft: '0.25rem', fontWeight: 500 }}>
+                      ⚠️ {analysis.formattingAnalysis.issues.join(', ')}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <MetricBar label="Grammar & Spellcheck" value={analysis.grammarAnalysis?.score || 0} />
+                  {analysis.grammarAnalysis?.details && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.25rem', paddingLeft: '0.25rem', lineHeight: '1.4' }}>
+                      {analysis.grammarAnalysis.details}
+                    </p>
+                  )}
+                  {analysis.grammarAnalysis?.issues && analysis.grammarAnalysis.issues.length > 0 && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--danger)', marginTop: '0.15rem', paddingLeft: '0.25rem', fontWeight: 500 }}>
+                      ⚠️ {analysis.grammarAnalysis.issues.join(', ')}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <MetricBar 
+                    label={
+                      analysis.projectAnalysis?.rating === 'Sales' ? "Sales & Deal Pipelines" :
+                      analysis.projectAnalysis?.rating === 'HR' ? "HR & Talent Programs" :
+                      analysis.projectAnalysis?.rating === 'Marketing' ? "Campaigns & Lead Acquisition" :
+                      analysis.projectAnalysis?.rating === 'Finance' ? "Financial & Analytical Modeling" :
+                      analysis.projectAnalysis?.rating === 'Operations' ? "Operational Efficiency & ERP" :
+                      analysis.projectAnalysis?.rating === 'Healthcare' ? "Clinical & Regulatory Compliance" :
+                      analysis.projectAnalysis?.rating === 'Legal' ? "Legal & Compliance Auditing" :
+                      analysis.projectAnalysis?.rating === 'General' ? "Professional & Core Competencies" :
+                      "Project Descriptions"
+                    } 
+                    value={analysis.projectAnalysis?.score || 0} 
+                  />
+                  {analysis.projectAnalysis?.details && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.25rem', paddingLeft: '0.25rem', lineHeight: '1.4' }}>
+                      {analysis.projectAnalysis.details}
+                    </p>
+                  )}
+                  {analysis.projectAnalysis?.recommendations && analysis.projectAnalysis.recommendations.length > 0 && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--accent)', marginTop: '0.15rem', paddingLeft: '0.25rem' }}>
+                      💡 {analysis.projectAnalysis.recommendations.join(' ')}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <MetricBar label="Work Experience Depth" value={analysis.experienceAnalysis?.score || 0} />
+                  {analysis.experienceAnalysis?.details && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.25rem', paddingLeft: '0.25rem', lineHeight: '1.4' }}>
+                      {analysis.experienceAnalysis.details}
+                    </p>
+                  )}
+                  {analysis.experienceAnalysis?.recommendations && analysis.experienceAnalysis.recommendations.length > 0 && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--accent)', marginTop: '0.15rem', paddingLeft: '0.25rem' }}>
+                      💡 {analysis.experienceAnalysis.recommendations.join(' ')}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <MetricBar label="Achievement Metrics" value={analysis.achievementAnalysis?.score || 0} />
+                  {analysis.achievementAnalysis?.details && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.25rem', paddingLeft: '0.25rem', lineHeight: '1.4' }}>
+                      {analysis.achievementAnalysis.details}
+                    </p>
+                  )}
+                  {analysis.achievementAnalysis?.recommendations && analysis.achievementAnalysis.recommendations.length > 0 && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--accent)', marginTop: '0.15rem', paddingLeft: '0.25rem' }}>
+                      💡 {analysis.achievementAnalysis.recommendations.join(' ')}
+                    </div>
+                  )}
+                </div>
+              </div>
             </Card>
           </div>
 
-          <div className="grid-2">
+          <div style={{ marginTop: '0.5rem' }}>
             {/* Strengths & Weaknesses */}
             <Card title="Resume Strengths & Weaknesses">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -221,28 +338,6 @@ export default function ResumeAnalyzer() {
                     {(analysis.weaknesses || []).map((weak, idx) => <li key={idx}>{weak}</li>)}
                   </ul>
                 </div>
-              </div>
-            </Card>
-
-            {/* Recommendations */}
-            <Card title="Actionable Improvement Steps">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {(analysis.suggestions || []).map((sug, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'flex',
-                      gap: '0.75rem',
-                      padding: '1rem',
-                      borderRadius: 'var(--radius-sm)',
-                      backgroundColor: 'var(--bg-app)',
-                      border: '1px solid var(--border)'
-                    }}
-                  >
-                    <Lightbulb size={18} style={{ color: 'var(--warning)', flexShrink: 0, marginTop: '2px' }} />
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.4' }}>{sug}</span>
-                  </div>
-                ))}
               </div>
             </Card>
           </div>

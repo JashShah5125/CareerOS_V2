@@ -1,36 +1,59 @@
 import { useState } from 'react';
-import { resumeApi, JobMatchAnalysis } from '../api';
+import { resumeApi, atsApi, JobMatchAnalysis } from '../api';
 import { Briefcase, AlertCircle, CheckCircle2, ChevronRight, HelpCircle, FileText, ArrowRight } from 'lucide-react';
 import Card from '../components/Card';
 import MetricBar from '../components/MetricBar';
 import { useNavigate } from 'react-router-dom';
 
 interface JobMatcherProps {
+  resumeText: string;
+  setResumeText: (val: string) => void;
   jobDescription: string;
   setJobDescription: (val: string) => void;
   result: JobMatchAnalysis | null;
   setResult: (val: JobMatchAnalysis | null) => void;
+  refreshUser?: () => void;
 }
 
 export default function JobMatcher({
+  resumeText,
+  setResumeText,
   jobDescription,
   setJobDescription,
   result,
-  setResult
+  setResult,
+  refreshUser
 }: JobMatcherProps) {
   const [loading, setLoading] = useState(false);
+  const [parsingFile, setParsingFile] = useState(false);
   const navigate = useNavigate();
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setParsingFile(true);
+      atsApi.parseFile(file)
+        .then(res => {
+          setResumeText(res.text);
+        })
+        .catch(err => {
+          alert(err.message || 'Failed to extract text from file.');
+        })
+        .finally(() => setParsingFile(false));
+    }
+  };
+
   const handleMatch = () => {
-    if (!jobDescription.trim()) {
-      alert('Please paste the target job description to match.');
+    if (!jobDescription.trim() || !resumeText.trim()) {
+      alert('Please provide both your resume and the target job description.');
       return;
     }
 
     setLoading(true);
-    resumeApi.analyzeJob(jobDescription)
+    resumeApi.analyzeJob(jobDescription, resumeText)
       .then(res => {
         setResult(res);
+        if (refreshUser) refreshUser();
       })
       .catch(err => {
         console.error(err);
@@ -47,32 +70,92 @@ export default function JobMatcher({
     <div>
       <header style={{ marginBottom: '2rem' }}>
         <h1>Job Matcher</h1>
-        <p>Paste any job description to evaluate your resume compatibility, scan missing skills, and calculate educational or experience alignment.</p>
+        <p>Evaluate your resume compatibility, scan missing skills, and calculate educational or experience alignment against custom job postings.</p>
       </header>
 
       {!result ? (
-        <Card title="Analyze Job Compatibility" subtitle="Enter the job description details below">
-          <div className="form-group">
-            <textarea
-              value={jobDescription}
-              onChange={e => setJobDescription(e.target.value)}
-              placeholder="Paste the complete job description from LinkedIn, Indeed, or company pages here..."
-              className="form-input form-textarea"
-              style={{ height: '350px' }}
-            />
+        <div>
+          <div className="grid-2" style={{ marginBottom: '1.5rem' }}>
+            {/* Left Column: Candidate Resume */}
+            <Card title="Candidate Resume Content" subtitle="Provide the resume text or select a document file to scan">
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Upload Resume File (.pdf, .docx)</label>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx"
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                    id="matcher-file-upload"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('matcher-file-upload')?.click()}
+                    className="btn btn-secondary"
+                    style={{ flexGrow: 1, height: '40px', gap: '0.5rem', justifyContent: 'center' }}
+                    disabled={parsingFile}
+                  >
+                    {parsingFile ? (
+                      <>
+                        <span className="spin-animation" style={{ display: 'inline-block' }}>⚙️</span>
+                        <span>Parsing Document...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileText size={16} />
+                        <span>Choose Resume File</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <textarea
+                  value={resumeText}
+                  onChange={e => setResumeText(e.target.value)}
+                  placeholder="Paste your resume content here..."
+                  className="form-input form-textarea"
+                  style={{ height: '300px', resize: 'none' }}
+                />
+              </div>
+            </Card>
+
+            {/* Right Column: Target Job Description */}
+            <Card title="Target Job Description" subtitle="Paste the target application requirements to match keywords">
+              <div className="form-group">
+                <textarea
+                  value={jobDescription}
+                  onChange={e => setJobDescription(e.target.value)}
+                  placeholder="Paste the complete job description details here..."
+                  className="form-input form-textarea"
+                  style={{ height: '372px', resize: 'none' }}
+                />
+              </div>
+            </Card>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
               onClick={handleMatch}
-              className="btn btn-primary"
-              disabled={loading || !jobDescription}
-              style={{ width: '100%', height: '44px' }}
+              className="btn btn-primary animate-pulse"
+              disabled={loading || parsingFile || !jobDescription.trim() || !resumeText.trim()}
+              style={{ height: '44px', gap: '0.5rem', width: '250px', justifyContent: 'center' }}
             >
-              {loading ? 'Evaluating Match Compatibility...' : 'Scan Job Description'}
+              {loading ? (
+                <>
+                  <span className="spin-animation" style={{ display: 'inline-block' }}>⚙️</span>
+                  <span>Performing Match scan...</span>
+                </>
+              ) : (
+                <>
+                  <Briefcase size={16} />
+                  <span>Scan Job Compatibility</span>
+                </>
+              )}
             </button>
           </div>
-        </Card>
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {/* Top Score Summary Banner */}
@@ -107,9 +190,6 @@ export default function JobMatcher({
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                   {result.matchScore >= 80 ? 'Good Match Core Compatibility' : 'Partial Keyword Match'}
                 </h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  Salary Estimate: {result.jobInsights?.salaryEstimate || 'N/A'} • Role Level: {result.jobInsights?.roleLevel || 'N/A'}
-                </p>
               </div>
             </div>
 
@@ -117,7 +197,7 @@ export default function JobMatcher({
               <button onClick={() => setResult(null)} className="btn btn-secondary">
                 Scan Another Job
               </button>
-              
+
               <button onClick={handleNavigateToTailor} className="btn btn-primary" style={{ gap: '0.375rem' }}>
                 <span>Tailor Resume</span>
                 <ArrowRight size={16} />

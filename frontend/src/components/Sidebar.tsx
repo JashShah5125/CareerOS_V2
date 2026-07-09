@@ -24,6 +24,7 @@ interface SidebarProps {
     email: string;
     avatarUrl: string | null;
     headline: string;
+    isGoogleUser?: boolean;
   } | null;
   onLogout: () => void;
 }
@@ -38,7 +39,6 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Resume Analyzer', path: '/analyzer', icon: FileSearch },
     { name: 'ATS Analyzer', path: '/ats-analyzer', icon: FileCheck },
-    { name: 'Resume Tailor', path: '/tailor', icon: Wand2 },
     { name: 'Job Matcher', path: '/matcher', icon: Briefcase },
     { name: 'Application Tracker', path: '/tracker', icon: Layers },
     { name: 'Interview Prep', path: '/interview', icon: MessageSquareCode },
@@ -88,15 +88,21 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
         <div className="sidebar-footer">
           {user && (
             <NavLink to="/settings" className="profile-widget" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <img
-                src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
-                alt="Avatar"
-                className="profile-avatar"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
-                }}
-              />
+              {user.isGoogleUser ? (
+                <img
+                  src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                  alt="Avatar"
+                  className="profile-avatar"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
+                  }}
+                />
+              ) : (
+                <div className="profile-initial-avatar">
+                  {user.firstName ? user.firstName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U')}
+                </div>
+              )}
               <div className="profile-details">
                 <span className="profile-name">{user.firstName} {user.lastName}</span>
                 <span className="profile-role">{user.headline || 'User'}</span>
@@ -268,6 +274,20 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
           height: 36px;
           border-radius: 50%;
           object-fit: cover;
+        }
+
+        .profile-initial-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 0.95rem;
+          flex-shrink: 0;
         }
 
         .profile-details {

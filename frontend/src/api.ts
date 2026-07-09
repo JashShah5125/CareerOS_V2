@@ -2,7 +2,7 @@
 
 const API_BASE = ''; // Relies on Vite local proxy setup
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, retries = 2): Promise<T> {
   const token = localStorage.getItem('token');
   const headers = {
     'Content-Type': 'application/json',
@@ -10,17 +10,26 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...(options.headers || {})
   };
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers
-  });
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'API Request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'API Request failed');
+    }
+
+    return response.json();
+  } catch (error: any) {
+    if (retries > 0) {
+      console.warn(`[API Client] Request to ${path} failed. Retrying in 500ms... (Remaining retries: ${retries})`, error);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return request<T>(path, options, retries - 1);
+    }
+    throw error;
   }
-
-  return response.json();
 }
 
 export interface UserProfile {
@@ -32,6 +41,8 @@ export interface UserProfile {
   headline: string;
   targetRole: string;
   avatarUrl: string | null;
+  isGoogleUser?: boolean;
+  plan?: string;
 }
 
 export const authApi = {
@@ -56,9 +67,9 @@ export const authApi = {
     method: 'PUT',
     body: JSON.stringify(profile)
   }),
-  addCredits: (amount: number) => request<{ credits: number }>('/api/auth/add-credits', {
+  addCredits: (amount: number, transactionId?: string, price?: number) => request<{ credits: number }>('/api/auth/add-credits', {
     method: 'POST',
-    body: JSON.stringify({ amount })
+    body: JSON.stringify({ amount, transactionId, price })
   })
 };
 
@@ -87,22 +98,6 @@ export interface JobMatchAnalysis {
   educationMatch: { status: string; required: string; detected: string; feedback: string };
   recommendationSummary: string;
   jobInsights?: { salaryEstimate: string; roleLevel: string; companyInsight: string };
-}
-
-export interface TailoredResumeResult {
-  originalResumeId: string;
-  tailoredResumeId: string;
-  matchScoreBefore: number;
-  matchScoreAfter: number;
-  tailoredResumeText: string;
-  keywordSuggestions: Array<{ keyword: string; occurrencesAdded: number; impact: string }>;
-  sectionImprovements: Array<{ section: string; original: string; improved: string; reason: string }>;
-  evidenceStatements: Array<{
-    statement: string;
-    evidenceType: 'VERIFIED' | 'PROJECT_MATCH' | 'SUGGESTED' | 'NOT_ADDED';
-    details: string;
-  }>;
-  downloadUrl: string;
 }
 
 export interface CoverLetterResult {
@@ -139,10 +134,6 @@ export const resumeApi = {
     method: 'POST',
     body: JSON.stringify({ resumeText, jobDescription })
   }),
-  tailor: (resumeText: string, jobDescription: string) => request<TailoredResumeResult>('/api/resume/tailor', {
-    method: 'POST',
-    body: JSON.stringify({ resumeText, jobDescription })
-  }),
   analyzeJob: (jobDescription: string, resumeText?: string) => request<JobMatchAnalysis>('/analyze_job', {
     method: 'POST',
     body: JSON.stringify({ jobDescription, resumeText })
@@ -167,8 +158,31 @@ export const resumeApi = {
   })
 };
 
+export interface JobDescriptionRecord {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  createdAt: string;
+}
+
+export const jobApi = {
+  list: () => request<JobDescriptionRecord[]>('/api/jobs'),
+  create: (data: { title: string; company: string; description: string }) => request<JobDescriptionRecord>('/api/jobs', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+  delete: (id: string) => request<{ message: string }>(`/api/jobs/${id}`, {
+    method: 'DELETE'
+  })
+};
+
 export interface ApplicationCard {
   id: string;
+  jobId?: string | null;
+  candidateName?: string;
+  candidateEmail?: string;
+  candidatePhone?: string;
   company: string;
   role: string;
   salary: string;
@@ -180,7 +194,7 @@ export interface ApplicationCard {
 }
 
 export const trackerApi = {
-  list: () => request<ApplicationCard[]>('/api/applications'),
+  list: (jobId?: string) => request<ApplicationCard[]>(jobId ? `/api/applications?jobId=${jobId}` : '/api/applications'),
   create: (app: Partial<ApplicationCard>) => request<ApplicationCard>('/api/applications', {
     method: 'POST',
     body: JSON.stringify(app)
@@ -230,12 +244,13 @@ export interface AtsAnalysisResult {
     keyword: string;
     countInJd: number;
     countInResume: number;
-    importance: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    importance: 'REQUIRED' | 'PREFERRED' | 'CONTEXTUAL' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
     explanation: string;
   }>;
   scoreDeductions: Array<{
     factor: string;
     points: number;
+    pointsDisplay?: string;
     description: string;
   }>;
   tailoredBulletPoints: Array<{
@@ -246,6 +261,9 @@ export interface AtsAnalysisResult {
   matchedKeywords: string[];
   missingKeywords: string[];
   redFlags: string[];
+  atsCompatibility?: number;
+  jobMatchScore?: number;
+  resumeQuality?: number;
   complianceChecklist: {
     hasContactInfo: boolean;
     isSingleColumn: boolean;
@@ -261,13 +279,41 @@ export interface AtsAnalysisResult {
     idealWordCount: boolean;
   };
   improvementSuggestions: string[];
+  candidateDetails?: {
+    candidateName: string;
+    candidateEmail: string;
+    candidatePhone: string;
+  };
+  jobDetails?: {
+    company: string;
+    role: string;
+  };
 }
 
 export const atsApi = {
-  analyzeCustom: (resumeText: string, jobDescription: string) => request<AtsAnalysisResult>('/api/ats/analyze', {
-    method: 'POST',
-    body: JSON.stringify({ resumeText, jobDescription })
-  }),
+  analyzeCustom: (resume: File | string, jobDescription: string) => {
+    const token = localStorage.getItem('token');
+    if (resume instanceof File) {
+      const formData = new FormData();
+      formData.append('file', resume);
+      formData.append('jobDescription', jobDescription);
+      return fetch('/api/ats/analyze', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      }).then(res => {
+        if (!res.ok) throw new Error('ATS analysis failed');
+        return res.json() as Promise<AtsAnalysisResult>;
+      });
+    } else {
+      return request<AtsAnalysisResult>('/api/ats/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ resumeText: resume, jobDescription })
+      });
+    }
+  },
   parseFile: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);

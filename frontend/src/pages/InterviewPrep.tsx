@@ -14,6 +14,7 @@ import {
   History
 } from 'lucide-react';
 import Card from '../components/Card';
+import MetricBar from '../components/MetricBar';
 
 interface Question {
   id: string;
@@ -28,6 +29,12 @@ interface Feedback {
   evaluation: string;
   suggestions: string[];
   modelAnswer: string;
+  starScores?: {
+    context: number;
+    task: number;
+    action: number;
+    result: number;
+  };
 }
 
 export default function InterviewPrep() {
@@ -338,6 +345,26 @@ export default function InterviewPrep() {
                       {feedback[activeQuestion.id].evaluation}
                     </p>
                   </div>
+
+                  {(() => {
+                    const activeFb = feedback[activeQuestion.id];
+                    if (!activeFb || !activeFb.starScores) return null;
+                    return (
+                      <div style={{ marginBottom: '1.25rem', padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-app)' }}>
+                        <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>STAR Method Diagnostic Breakdown</span>
+                        <div className="grid-2" style={{ gap: '1rem' }}>
+                          <div>
+                            <MetricBar label="Situation (Context Completeness)" value={activeFb.starScores.context} />
+                            <MetricBar label="Task (Ownership / Goal)" value={activeFb.starScores.task} />
+                          </div>
+                          <div>
+                            <MetricBar label="Action (Concrete Specificity)" value={activeFb.starScores.action} />
+                            <MetricBar label="Result (Measurable Outcome)" value={activeFb.starScores.result} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div style={{ marginBottom: '1.25rem' }}>
                     <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>KEY IMPROVEMENT SUGGESTIONS</span>

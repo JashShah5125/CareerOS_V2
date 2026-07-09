@@ -11,6 +11,16 @@ export const generateInterviewQuestions = async (req: Request, res: Response) =>
 
     const userId = await getUserIdFromRequest(req);
 
+    // Validate and decrement 1 credit for generating interview questions
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.credits <= 0) {
+      return res.status(403).json({ error: 'Insufficient credits. Please top up your tokens balance.' });
+    }
+    await prisma.user.update({
+      where: { id: userId },
+      data: { credits: { decrement: 1 } }
+    });
+
     const systemPrompt = `
       You are an expert interviewer. Generate exactly 4 distinct interview questions for the specified target role and target company.
       Provide one question of each of these types: TECHNICAL, CODING, BEHAVIORAL, and HR.
@@ -39,8 +49,96 @@ export const generateInterviewQuestions = async (req: Request, res: Response) =>
       resultObj = JSON.parse(cleaned);
     } catch (apiError: any) {
       console.warn('[Interview Controller] Ollama generation failed. Falling back to mock questions:', apiError);
-      resultObj = {
-        questions: [
+      
+      const roleLower = targetRole.toLowerCase();
+      let questionsList = [];
+
+      if (roleLower.includes('sale') || roleLower.includes('account') || roleLower.includes('business dev')) {
+        questionsList = [
+          {
+            id: 'q1',
+            type: 'TECHNICAL',
+            question: 'How do you handle price objections from high-intent enterprise clients during negotiation?',
+            idealAnswer: 'Refocus the discussion on ROI and overall contract value rather than raw price. Highlight specific product utilities.'
+          },
+          {
+            id: 'q2',
+            type: 'CODING',
+            question: 'Outline the steps you would take to qualify a cold lead and move them through your sales pipeline.',
+            idealAnswer: 'Research their pain points, conduct a discovery call, map budget/timeline parameters, and book a tailored demo.'
+          },
+          {
+            id: 'q3',
+            type: 'BEHAVIORAL',
+            question: 'Tell me about a time you missed your sales quota. What factors led to this, and how did you adjust your sales pitch afterwards?',
+            idealAnswer: 'Identified product bottlenecks, adapted prospecting techniques, expanded pipeline volume, and met following goals.'
+          }
+        ];
+      } else if (roleLower.includes('market') || roleLower.includes('growth') || roleLower.includes('seo') || roleLower.includes('brand')) {
+        questionsList = [
+          {
+            id: 'q1',
+            type: 'TECHNICAL',
+            question: 'Explain how you structure a multi-channel campaign to acquire customers while keeping CAC low.',
+            idealAnswer: 'Mix high-intent organic traffic channels (SEO, content) with paid channels, optimization of conversion rate (CRO).'
+          },
+          {
+            id: 'q2',
+            type: 'CODING',
+            question: 'Describe how you configure conversion tracking and metrics for A/B testing on a landing page.',
+            idealAnswer: 'Set primary goals (conversions), tracking variables, control/test splits, and check statistical significance.'
+          },
+          {
+            id: 'q3',
+            type: 'BEHAVIORAL',
+            question: 'Tell me about a growth campaign you managed that failed to reach target conversions. How did you diagnose the issue?',
+            idealAnswer: 'Audited drop-off rates in the funnel, analyzed user search intent mismatch, pivoted campaign creatives, and recovered.'
+          }
+        ];
+      } else if (roleLower.includes('hr') || roleLower.includes('resource') || roleLower.includes('talent') || roleLower.includes('recruit')) {
+        questionsList = [
+          {
+            id: 'q1',
+            type: 'TECHNICAL',
+            question: 'How do you structure a performance improvement plan (PIP) to ensure fair opportunity and objective tracking?',
+            idealAnswer: 'Define specific performance gaps, set measurable metrics, schedule weekly reviews, and document outcomes.'
+          },
+          {
+            id: 'q2',
+            type: 'CODING',
+            question: 'Explain how you would design a structured candidate evaluation scorecard to minimize hiring bias.',
+            idealAnswer: 'Map job descriptions to specific skill rubrics, enforce identical interview questions, and standardize scoring criteria.'
+          },
+          {
+            id: 'q3',
+            type: 'BEHAVIORAL',
+            question: 'Describe a situation where you had to manage a difficult conflict between a manager and their direct report.',
+            idealAnswer: 'Listened to both sides separately, held a structured mediation meeting, set behavioral expectations, and resolved.'
+          }
+        ];
+      } else if (roleLower.includes('finance') || roleLower.includes('accountant') || roleLower.includes('audit')) {
+        questionsList = [
+          {
+            id: 'q1',
+            type: 'TECHNICAL',
+            question: 'What is the difference between cash accounting and accrual accounting? When would you use each?',
+            idealAnswer: 'Cash records transactions on currency receipt; accrual matches expenses/revenues when incurred. Accrual is better for forecasting.'
+          },
+          {
+            id: 'q2',
+            type: 'CODING',
+            question: 'Describe the steps you would take to stress-test a corporate cash flow forecast against rising operational costs.',
+            idealAnswer: 'Model variable cost inflation points, reduce projected accounts receivable speed, and determine base cash reserves.'
+          },
+          {
+            id: 'q3',
+            type: 'BEHAVIORAL',
+            question: 'Tell me about a time you identified a significant discrepancy in financial statements. How did you audit and resolve it?',
+            idealAnswer: 'Traced invoices, checked double-entry ledgers, reconciled with bank sheets, and adjusted ledger balances.'
+          }
+        ];
+      } else {
+        questionsList = [
           {
             id: 'q1',
             type: 'TECHNICAL',
@@ -58,15 +156,18 @@ export const generateInterviewQuestions = async (req: Request, res: Response) =>
             type: 'BEHAVIORAL',
             question: 'Describe a situation where you had a disagreement with a designer or product manager regarding the UX of a component. How did you resolve the conflict?',
             idealAnswer: 'Resolved by prototyping, referencing usability data, and maintaining professional collaboration.'
-          },
-          {
-            id: 'q4',
-            type: 'HR',
-            question: `Why do you want to join ${targetCompany} as a ${targetRole}?`,
-            idealAnswer: 'Demonstrate alignment with the company goals and core values.'
           }
-        ]
-      };
+        ];
+      }
+
+      questionsList.push({
+        id: 'q4',
+        type: 'HR',
+        question: `Why do you want to join ${targetCompany} as a ${targetRole}?`,
+        idealAnswer: 'Demonstrate alignment with the company goals and core values.'
+      });
+
+      resultObj = { questions: questionsList };
     }
     
     // Ensure IDs are present
@@ -108,6 +209,16 @@ export const submitAnswerFeedback = async (req: Request, res: Response) => {
 
     const userId = await getUserIdFromRequest(req);
 
+    // Validate and decrement 1 credit for evaluating interview response
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.credits <= 0) {
+      return res.status(403).json({ error: 'Insufficient credits. Please top up your tokens balance.' });
+    }
+    await prisma.user.update({
+      where: { id: userId },
+      data: { credits: { decrement: 1 } }
+    });
+
     const systemPrompt = `
       You are an AI interviewer and career coach. Review the user's answer to the given question.
       Evaluate performance, assign a rating percentage (0 to 100), structure constructive criticisms, and provide a model answer.
@@ -139,7 +250,13 @@ export const submitAnswerFeedback = async (req: Request, res: Response) => {
         score,
         evaluation: 'Satisfactory mock response, evaluating text structure and keyword density.',
         suggestions: ['Quantify metrics on past achievements.', 'Structure answers using the STAR method.'],
-        modelAnswer: 'A robust response should clearly outline the problem statements, actions, and results.'
+        modelAnswer: 'A robust response should clearly outline the problem statements, actions, and results.',
+        starScores: {
+          context: score > 70 ? 80 : 50,
+          task: score > 70 ? 75 : 60,
+          action: score > 70 ? 85 : 55,
+          result: score > 70 ? 90 : 40
+        }
       };
     }
 
@@ -158,7 +275,8 @@ export const submitAnswerFeedback = async (req: Request, res: Response) => {
             score: resultObj.score,
             evaluation: resultObj.evaluation,
             suggestions: resultObj.suggestions,
-            modelAnswer: resultObj.modelAnswer
+            modelAnswer: resultObj.modelAnswer,
+            starScores: resultObj.starScores
           };
           
           await prisma.interviewSession.update({

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { login, register, googleLogin, forgotPassword, getProfile, updateProfile, addCredits } from '../controllers/auth.controller';
-import { analyzeResume, tailorResume, calculateAtsScore, getLatestResume } from '../controllers/resume.controller';
-import { analyzeJob } from '../controllers/job.controller';
+import { analyzeResume, calculateAtsScore, getLatestResume } from '../controllers/resume.controller';
+import { analyzeJob, getJobs, createJob, deleteJob } from '../controllers/job.controller';
 import { generateCoverLetter } from '../controllers/coverletter.controller';
 import { generateInterviewQuestions, submitAnswerFeedback, getInterviewHistory, getInterviewSessionDetail, saveInterviewAnswers } from '../controllers/interview.controller';
 import { getApplications, createApplication, updateApplication, deleteApplication } from '../controllers/tracker.controller';
@@ -18,7 +18,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post('/analyze_resume', upload.single('file'), analyzeResume);
 router.post('/analyze_job', analyzeJob);
 router.post('/generate_cover_letter', generateCoverLetter);
-router.post('/tailor_resume', tailorResume);
 router.post('/generate_interview_questions', generateInterviewQuestions);
 router.post('/calculate_ats_score', calculateAtsScore);
 
@@ -34,10 +33,9 @@ router.post('/api/auth/add-credits', addCredits);
 
 // Resume aliases for nested modular design
 router.post('/api/resume/analyze', upload.single('file'), analyzeResume);
-router.post('/api/resume/tailor', tailorResume);
 router.post('/api/resume/calculate-ats', calculateAtsScore);
 router.get('/api/resume/latest', getLatestResume);
-router.post('/api/ats/analyze', analyzeAtsCustom);
+router.post('/api/ats/analyze', upload.single('file'), analyzeAtsCustom);
 router.post('/api/ats/parse-file', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded.' });
@@ -53,6 +51,9 @@ router.post('/api/ats/parse-file', upload.single('file'), async (req, res) => {
 
 // Job aliases
 router.post('/api/job/analyze', analyzeJob);
+router.get('/api/jobs', getJobs);
+router.post('/api/jobs', createJob);
+router.delete('/api/jobs/:id', deleteJob);
 
 // Cover Letter
 router.post('/api/cover-letter/generate', generateCoverLetter);

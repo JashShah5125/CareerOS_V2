@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import ResumeAnalyzer from './pages/ResumeAnalyzer';
-import ResumeTailor from './pages/ResumeTailor';
 import JobMatcher from './pages/JobMatcher';
 import ApplicationTracker from './pages/ApplicationTracker';
 import InterviewPrep from './pages/InterviewPrep';
@@ -11,18 +10,14 @@ import CareerAnalytics from './pages/CareerAnalytics';
 import Settings from './pages/Settings';
 import Auth from './pages/Auth';
 import AtsAnalyzer from './pages/AtsAnalyzer';
-import { UserProfile } from './api';
+import { UserProfile, authApi } from './api';
 
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
 
-  // Parent-level memory state preservation across sidebar navigation clicks
-  const [tailorResumeText, setTailorResumeText] = useState('');
-  const [tailorJobDescription, setTailorJobDescription] = useState('');
-  const [tailorResult, setTailorResult] = useState<any>(null);
-
+  const [matcherResumeText, setMatcherResumeText] = useState('');
   const [atsResumeText, setAtsResumeText] = useState('');
   const [atsJobDescription, setAtsJobDescription] = useState('');
   const [atsResult, setAtsResult] = useState<any>(null);
@@ -30,15 +25,37 @@ export default function App() {
   const [matcherJobDescription, setMatcherJobDescription] = useState('');
   const [matcherResult, setMatcherResult] = useState<any>(null);
 
+  const refreshUser = () => {
+    const savedToken = localStorage.getItem('token') || token;
+    if (savedToken) {
+      authApi.getProfile()
+        .then(profile => {
+          setUser(profile);
+          localStorage.setItem('user', JSON.stringify(profile));
+        })
+        .catch(err => console.error('[App] Failed to refresh profile:', err));
+    }
+  };
+
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
 
-    if (savedToken && savedUser) {
+    if (savedToken) {
       setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
+      authApi.getProfile()
+        .then(profile => {
+          setUser(profile);
+          localStorage.setItem('user', JSON.stringify(profile));
+        })
+        .catch(err => console.error('[App] Failed to refresh profile:', err))
+        .finally(() => setCheckingSession(false));
+    } else {
+      setCheckingSession(false);
     }
-    setCheckingSession(false);
   }, []);
 
   const handleLoginSuccess = (loggedInUser: UserProfile, jwtToken: string) => {
@@ -79,28 +96,21 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/analyzer" element={<ResumeAnalyzer />} />
-            <Route path="/tailor" element={
-              <ResumeTailor 
-                resumeText={tailorResumeText} 
-                setResumeText={setTailorResumeText}
-                jobDescription={tailorJobDescription} 
-                setJobDescription={setTailorJobDescription}
-                result={tailorResult} 
-                setResult={setTailorResult}
-              />
-            } />
             <Route path="/matcher" element={
               <JobMatcher 
+                resumeText={matcherResumeText}
+                setResumeText={setMatcherResumeText}
                 jobDescription={matcherJobDescription} 
                 setJobDescription={setMatcherJobDescription}
                 result={matcherResult} 
                 setResult={setMatcherResult}
+                refreshUser={refreshUser}
               />
             } />
             <Route path="/tracker" element={<ApplicationTracker />} />
             <Route path="/interview" element={<InterviewPrep />} />
             <Route path="/analytics" element={<CareerAnalytics />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/settings" element={<Settings refreshUser={refreshUser} />} />
             <Route path="/ats-analyzer" element={
               <AtsAnalyzer 
                 resumeText={atsResumeText} 
@@ -109,6 +119,7 @@ export default function App() {
                 setJobDescription={setAtsJobDescription}
                 result={atsResult} 
                 setResult={setAtsResult}
+                refreshUser={refreshUser}
               />
             } />
             {/* Fallback route */}

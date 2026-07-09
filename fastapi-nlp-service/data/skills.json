@@ -1,0 +1,92 @@
+{
+  "Attendance and Leave Management": {
+    "aliases": [
+      "attendance and leave management",
+      "attendance management",
+      "leave management",
+      "attendance and leave records",
+      "attendance records",
+      "leave records",
+      "attendance tracking",
+      "leave tracking"
+    ],
+    "category": "hr_operations"
+  },
+  "Communication Skills": {
+    "aliases": [
+      "communication skills",
+      "communication",
+      "candidate communication",
+      "employee communication",
+      "stakeholder communication",
+      "client communication",
+      "verbal communication",
+      "written communication"
+    ],
+    "category": "soft_skill"
+  },
+  "Compliance": {
+    "aliases": [
+      "compliance",
+      "policy compliance",
+      "hr compliance",
+      "labor law compliance",
+      "labour law compliance",
+      "statutory compliance",
+      "employment law"
+    ],
+    "category": "hr_operations"
+  },
+  "Git": {
+    "aliases": [
+      "git",
+      "github",
+      "version control"
+    ],
+    "category": "software_technical"
+  },
+  "Salesforce": {
+    "aliases": [
+      "salesforce",
+      "salesforce crm",
+      "sf crm"
+    ],
+    "category": "sales"
+  },
+  "LinkedIn Recruiter": {
+    "aliases": [
+      "linkedin recruiter",
+      "linkedin talent"
+    ],
+    "category": "hr_operations"
+  },
+  "MS Excel": {
+    "aliases": [
+      "ms excel",
+      "microsoft excel",
+      "excel"
+    ],
+    "category": "general"
+  },
+  "Confidentiality": {
+    "aliases": [
+      "confidentiality",
+      "confidential"
+    ],
+    "category": "soft_skill"
+  },
+  "Employee Onboarding": {
+    "aliases": [
+      "employee onboarding",
+      "onboarding"
+    ],
+    "category": "hr_operations"
+  },
+  "HR Documentation": {
+    "aliases": [
+      "hr documentation",
+      "documentation"
+    ],
+    "category": "hr_operations"
+  }
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { trackerApi, ApplicationCard } from '../api';
+import { trackerApi, ApplicationCard, jobApi, JobDescriptionRecord } from '../api';
 import Kanban from '../components/Kanban';
 import Card from '../components/Card';
 import { Plus, X, Briefcase, Calendar, DollarSign, FileText } from 'lucide-react';
@@ -10,13 +10,29 @@ export default function ApplicationTracker() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeCard, setActiveCard] = useState<Partial<ApplicationCard> | null>(null);
 
+  const [jobs, setJobs] = useState<JobDescriptionRecord[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<string>('general');
+  const [jdModalOpen, setJdModalOpen] = useState(false);
+  const [newJd, setNewJd] = useState({ title: '', company: '', description: '' });
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
   useEffect(() => {
     fetchApps();
-  }, []);
+  }, [selectedJobId]);
+
+  const fetchJobs = () => {
+    jobApi.list()
+      .then(res => setJobs(res))
+      .catch(err => console.error(err));
+  };
 
   const fetchApps = () => {
     setLoading(true);
-    trackerApi.list()
+    const queryId = selectedJobId === 'general' ? 'general' : selectedJobId;
+    trackerApi.list(queryId)
       .then(res => setApps(res))
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
@@ -35,9 +51,11 @@ export default function ApplicationTracker() {
   };
 
   const handleAddClick = (status: ApplicationCard['status']) => {
+    const activeJob = jobs.find(j => j.id === selectedJobId);
     setActiveCard({
-      company: '',
-      role: '',
+      jobId: selectedJobId === 'general' ? null : selectedJobId,
+      company: activeJob ? activeJob.company : '',
+      role: activeJob ? activeJob.title : '',
       salary: '',
       status: status,
       deadline: '',
@@ -59,13 +77,12 @@ export default function ApplicationTracker() {
 
     const dataToSave = {
       ...activeCard,
-      // Normalize empty date inputs to null so they don't break JSON formatting
+      jobId: selectedJobId === 'general' ? null : selectedJobId,
       deadline: activeCard.deadline || null,
       interviewDate: activeCard.interviewDate || null
     };
 
     if (activeCard.id) {
-      // Edit existing
       trackerApi.update(activeCard.id, dataToSave)
         .then(() => {
           fetchApps();
@@ -73,7 +90,6 @@ export default function ApplicationTracker() {
         })
         .catch(err => console.error(err));
     } else {
-      // Create new
       trackerApi.create(dataToSave)
         .then(() => {
           fetchApps();
@@ -83,18 +99,89 @@ export default function ApplicationTracker() {
     }
   };
 
+  const handleJdSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJd.title || !newJd.company || !newJd.description) {
+      alert('Please fill in all fields.');
+      return;
+    }
+
+    jobApi.create(newJd)
+      .then(res => {
+        setJobs([...jobs, res]);
+        setSelectedJobId(res.id);
+        setJdModalOpen(false);
+        setNewJd({ title: '', company: '', description: '' });
+      })
+      .catch(err => console.error(err));
+  };
+
+  const handleDeleteJob = () => {
+    if (selectedJobId === 'general') return;
+    if (confirm('Are you sure you want to delete this job board? All associated tracking cards will be permanently deleted.')) {
+      jobApi.delete(selectedJobId)
+        .then(() => {
+          setSelectedJobId('general');
+          fetchJobs();
+        })
+        .catch(err => console.error(err));
+    }
+  };
+
   return (
     <div>
       <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1>Application Tracker</h1>
-          <p>Organize, schedule, and track job applications across standard recruitment funnel columns.</p>
+          <h1>Applicant tracking board</h1>
+          <p>Organize, schedule, and track candidates applying for your open Job Descriptions across standard recruitment stages.</p>
         </div>
         <button onClick={() => handleAddClick('APPLIED')} className="btn btn-primary">
           <Plus size={16} />
-          <span>Add Application</span>
+          <span>Add Applicant</span>
         </button>
       </header>
+
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        backgroundColor: 'var(--bg-card)', 
+        border: '1px solid var(--border)', 
+        borderRadius: 'var(--radius-md)', 
+        padding: '1rem', 
+        marginBottom: '2rem',
+        flexWrap: 'wrap',
+        gap: '1rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <label style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>Active Workspace Board:</label>
+          <select 
+            value={selectedJobId} 
+            onChange={(e) => setSelectedJobId(e.target.value)}
+            className="form-input"
+            style={{ minWidth: '240px', height: '40px', padding: '0 0.5rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)' }}
+          >
+            <option value="general">📁 General Tracker Board</option>
+            {jobs.map(j => (
+              <option key={j.id} value={j.id}>💼 {j.company} - {j.title}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button onClick={() => setJdModalOpen(true)} className="btn btn-secondary" style={{ height: '40px' }}>
+            <Plus size={16} />
+            <span>New Job Board</span>
+          </button>
+          
+          {selectedJobId !== 'general' && (
+            <button onClick={handleDeleteJob} className="btn btn-secondary" style={{ height: '40px', color: 'var(--danger)', borderColor: 'var(--danger-light)' }}>
+              <X size={16} />
+              <span>Delete Board</span>
+            </button>
+          )}
+        </div>
+      </div>
 
       {loading && apps.length === 0 ? (
         <p>Loading application cards...</p>
@@ -108,17 +195,51 @@ export default function ApplicationTracker() {
         />
       )}
 
-      {/* Modal Dialog Form Overlay */}
+      {/* Modal Dialog Form Overlay for Application Card */}
       {modalOpen && activeCard && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>{activeCard.id ? 'Edit Application Details' : 'Add New Application'}</h3>
+              <h3>{activeCard.id ? 'Edit Applicant Details' : 'Add New Candidate'}</h3>
               <button onClick={() => setModalOpen(false)} className="close-btn"><X size={18} /></button>
             </div>
             
             <form onSubmit={handleModalSave}>
               <div className="form-grid">
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label className="form-label">Applicant Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={activeCard.candidateName || ''}
+                    onChange={e => setActiveCard({ ...activeCard, candidateName: e.target.value })}
+                    className="form-input"
+                    placeholder="e.g. Vinayak Katheriya"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Applicant Email</label>
+                  <input
+                    type="email"
+                    value={activeCard.candidateEmail || ''}
+                    onChange={e => setActiveCard({ ...activeCard, candidateEmail: e.target.value })}
+                    className="form-input"
+                    placeholder="e.g. vinayak@example.com"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Applicant Phone</label>
+                  <input
+                    type="text"
+                    value={activeCard.candidatePhone || ''}
+                    onChange={e => setActiveCard({ ...activeCard, candidatePhone: e.target.value })}
+                    className="form-input"
+                    placeholder="e.g. +91 8793435992"
+                  />
+                </div>
+
                 <div className="form-group">
                   <label className="form-label">Company Name *</label>
                   <input
@@ -130,7 +251,7 @@ export default function ApplicationTracker() {
                     placeholder="e.g. Stripe"
                   />
                 </div>
-
+                
                 <div className="form-group">
                   <label className="form-label">Job Title / Role *</label>
                   <input
@@ -139,28 +260,27 @@ export default function ApplicationTracker() {
                     value={activeCard.role || ''}
                     onChange={e => setActiveCard({ ...activeCard, role: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. Frontend Engineer"
+                    placeholder="e.g. Frontend Developer"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Salary Details</label>
+                  <label className="form-label">Salary Expectation</label>
                   <input
                     type="text"
                     value={activeCard.salary || ''}
                     onChange={e => setActiveCard({ ...activeCard, salary: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. $140,000/yr"
+                    placeholder="e.g. $120k/yr"
                   />
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Recruitment Status</label>
                   <select
-                    value={activeCard.status}
+                    value={activeCard.status || 'APPLIED'}
                     onChange={e => setActiveCard({ ...activeCard, status: e.target.value as ApplicationCard['status'] })}
                     className="form-input"
-                    style={{ height: '38px' }}
                   >
                     <option value="APPLIED">Applied</option>
                     <option value="ASSESSMENT">Assessment</option>
@@ -181,7 +301,7 @@ export default function ApplicationTracker() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Submission Deadline</label>
+                  <label className="form-label">Response Deadline</label>
                   <input
                     type="date"
                     value={activeCard.deadline || ''}
@@ -190,7 +310,7 @@ export default function ApplicationTracker() {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
                   <label className="form-label">Interview Date</label>
                   <input
                     type="date"
@@ -202,12 +322,12 @@ export default function ApplicationTracker() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Internal Notes & Reminders</label>
+                <label className="form-label">Internal Recruiter Notes</label>
                 <textarea
                   value={activeCard.notes || ''}
                   onChange={e => setActiveCard({ ...activeCard, notes: e.target.value })}
                   className="form-input form-textarea"
-                  placeholder="Paste recruiter notes, links, or follow-up strategies..."
+                  placeholder="Paste candidate background details, feedback, or follow-up timelines..."
                   style={{ height: '80px' }}
                 />
               </div>
@@ -217,7 +337,66 @@ export default function ApplicationTracker() {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Save Card
+                  Save Candidate
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Dialog Form Overlay for New Job Description / Board */}
+      {jdModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Create New Job Board</h3>
+              <button onClick={() => setJdModalOpen(false)} className="close-btn"><X size={18} /></button>
+            </div>
+            
+            <form onSubmit={handleJdSave}>
+              <div className="form-group">
+                <label className="form-label">Company Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newJd.company}
+                  onChange={e => setNewJd({ ...newJd, company: e.target.value })}
+                  className="form-input"
+                  placeholder="e.g. Google"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Job Title / Role *</label>
+                <input
+                  type="text"
+                  required
+                  value={newJd.title}
+                  onChange={e => setNewJd({ ...newJd, title: e.target.value })}
+                  className="form-input"
+                  placeholder="e.g. Senior Software Engineer"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Job Description (JD Details) *</label>
+                <textarea
+                  required
+                  value={newJd.description}
+                  onChange={e => setNewJd({ ...newJd, description: e.target.value })}
+                  className="form-input form-textarea"
+                  placeholder="Paste the target job description requirements, skills, and objectives..."
+                  style={{ height: '180px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button type="button" onClick={() => setJdModalOpen(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Create Board
                 </button>
               </div>
             </form>

@@ -1,90 +1,156 @@
 import { Request, Response } from 'express';
+import { prisma } from '../prisma';
+import { getUserIdFromRequest } from './auth.controller';
 
 export const getSettings = async (req: Request, res: Response) => {
-  return res.json({
-    theme: 'dark',
-    notifications: {
-      emailAlerts: true,
-      deadlineReminders: true,
-      weeklySummary: false
-    },
-    subscription: {
-      plan: 'Free Plan',
-      status: 'ACTIVE',
-      billingPeriod: 'monthly',
-      price: '₹0',
-      nextBillingDate: '2026-07-28'
-    },
-    billing: {
-      cardBrand: 'Visa',
-      last4: '4242',
-      billingEmail: 'user@example.com'
+  try {
+    const userId = await getUserIdFromRequest(req);
+    
+    // Find active database subscription record
+    const sub = await prisma.subscription.findFirst({
+      where: { userId }
+    });
+    
+    let plan = 'Free Plan';
+    let price = '₹0';
+    let status = 'ACTIVE';
+    let nextBillingDate = '2026-08-28';
+    
+    if (sub) {
+      plan = sub.plan === 'FREE' ? 'Free Plan' : sub.plan === 'PRO' ? 'Pro Plan' : sub.plan === 'PREMIUM' ? 'Premium Plan' : `${sub.plan} Plan`;
+      price = sub.plan === 'FREE' ? '₹0' : sub.plan === 'PRO' ? '₹499' : '₹999';
+      status = sub.status;
+      nextBillingDate = sub.currentPeriodEnd ? sub.currentPeriodEnd.toISOString().split('T')[0] : '2026-08-28';
     }
-  });
+
+    return res.json({
+      theme: 'dark',
+      notifications: {
+        emailAlerts: true,
+        deadlineReminders: true,
+        weeklySummary: false
+      },
+      subscription: {
+        plan,
+        status,
+        billingPeriod: 'monthly',
+        price,
+        nextBillingDate
+      },
+      billing: {
+        cardBrand: 'Visa',
+        last4: '4242',
+        billingEmail: 'user@example.com'
+      }
+    });
+  } catch (error: any) {
+    console.error('[Settings Controller] Error loading settings:', error);
+    return res.status(500).json({ error: 'Failed to load settings.' });
+  }
 };
 
 export const updateSettings = async (req: Request, res: Response) => {
-  const updates = req.body;
-  return res.json({
-    message: 'Settings updated successfully',
-    updatedSettings: updates
-  });
+  try {
+    const userId = await getUserIdFromRequest(req);
+    const updates = req.body;
+    
+    if (updates.subscription) {
+      const incomingPlan = updates.subscription.plan || 'Free Plan';
+      let dbPlan = 'FREE';
+      if (incomingPlan.includes('Pro')) dbPlan = 'PRO';
+      if (incomingPlan.includes('Premium')) dbPlan = 'PREMIUM';
+      
+      const nextPeriod = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      
+      const existingSub = await prisma.subscription.findFirst({
+        where: { userId }
+      });
+      
+      if (existingSub) {
+        await prisma.subscription.update({
+          where: { id: existingSub.id },
+          data: {
+            plan: dbPlan,
+            status: 'ACTIVE',
+            currentPeriodEnd: nextPeriod
+          }
+        });
+      } else {
+        await prisma.subscription.create({
+          data: {
+            userId,
+            plan: dbPlan,
+            status: 'ACTIVE',
+            currentPeriodEnd: nextPeriod
+          }
+        });
+      }
+
+      // Log Payment transaction record in database
+      const transactionId = updates.subscription.transactionId;
+      if (transactionId) {
+        const existingPayment = await prisma.payment.findUnique({
+          where: { transactionId }
+        });
+        if (!existingPayment) {
+          await prisma.payment.create({
+            data: {
+              userId,
+              amount: Number(updates.subscription.paymentAmount) || (dbPlan === 'PRO' ? 499 : 1199),
+              status: 'SUCCESS',
+              transactionId
+            }
+          });
+        }
+      }
+    }
+
+    return res.json({
+      message: 'Settings updated successfully',
+      updatedSettings: updates
+    });
+  } catch (error: any) {
+    console.error('[Settings Controller] Error updating settings:', error);
+    return res.status(500).json({ error: 'Failed to update settings.' });
+  }
 };
 
 // Check local Ollama connection or Groq API status based on env setup
 export const getModelStatus = async (req: Request, res: Response) => {
   try {
-    const groqApiKey = process.env.GROQ_API_KEY;
-    if (groqApiKey) {
-      const maskedKey = groqApiKey.substring(0, 8) + '...' + groqApiKey.substring(groqApiKey.length - 4);
-      return res.json({
-        status: 'ONLINE',
-        model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
-        ollamaUrl: 'https://api.groq.com/openai/v1',
-        modelPulled: true,
-        availableModels: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'],
-        error: `Active Groq LPU Engine (Key: ${maskedKey})`
-      });
-    }
-
-    const modelName = process.env.OLLAMA_MODEL || 'qwen3-0.6b-instruct';
-    const ollamaUrl = process.env.OLLAMA_HOST || 'http://localhost:11434';
+    const nlpServiceUrl = process.env.NLP_SERVICE_URL || 'http://localhost:8000';
     
-    const response = await fetch(`${ollamaUrl}/api/tags`);
+    // Fetch status directly from the local Python FastAPI NLP Microservice
+    const response = await fetch(`${nlpServiceUrl}/api/v1/status`);
     if (!response.ok) {
       return res.json({
         status: 'OFFLINE',
-        model: modelName,
-        ollamaUrl,
+        model: 'Local Cosine Similarity Matrix',
+        ollamaUrl: nlpServiceUrl,
         modelPulled: false,
         availableModels: [],
-        error: 'Ollama service returned error code'
+        error: 'FastAPI NLP Microservice returned error code'
       });
     }
     
     const data = await response.json() as any;
-    const modelsList = data.models || [];
-    
-    const modelExists = modelsList.some((m: any) => {
-      const nameLower = m.name.toLowerCase();
-      return nameLower.includes('qwen3') || nameLower.includes('qwen') || nameLower.includes(modelName.toLowerCase());
-    });
     
     return res.json({
-      status: 'ONLINE',
-      model: modelName,
-      ollamaUrl,
-      modelPulled: modelExists,
-      availableModels: modelsList.map((m: any) => m.name)
+      status: data.status,
+      model: data.model,
+      ollamaUrl: data.endpoint,
+      modelPulled: data.status === 'ONLINE',
+      availableModels: data.modelsPulled || [data.model],
+      error: `Connected via Port 8000 Python NLP Microservice (${data.engine})`
     });
   } catch (err: any) {
     return res.json({
       status: 'OFFLINE',
-      model: process.env.OLLAMA_MODEL || 'qwen3-0.6b-instruct',
-      ollamaUrl: process.env.OLLAMA_HOST || 'http://localhost:11434',
+      model: 'Local Cosine Similarity Matrix',
+      ollamaUrl: 'http://localhost:8000',
       modelPulled: false,
       availableModels: [],
-      error: err.message
+      error: `Connection to Port 8000 Python NLP Service failed: ${err.message}`
     });
   }
 };

@@ -21,7 +21,11 @@ import {
 import Card from '../components/Card';
 import MetricBar from '../components/MetricBar';
 
-export default function Settings() {
+interface SettingsProps {
+  refreshUser?: () => void;
+}
+
+export default function Settings({ refreshUser }: SettingsProps) {
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,8 +95,12 @@ export default function Settings() {
     if (!profile) return;
 
     authApi.updateProfile(profile)
-      .then(() => {
+      .then((res) => {
         setSuccessMsg('Profile updated successfully.');
+        if (res.user) {
+          setProfile(res.user);
+        }
+        if (refreshUser) refreshUser();
         setTimeout(() => setSuccessMsg(''), 3000);
       })
       .catch(err => {
@@ -134,10 +142,11 @@ export default function Settings() {
         image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120",
         handler: function (response: any) {
           // Payment successful callback: update credits in database
-          authApi.addCredits(amount)
+          authApi.addCredits(amount, response.razorpay_payment_id, price)
             .then(res => {
               setCredits(res.credits);
               setSuccessMsg(`Successfully purchased ${amount} AI Credits for ₹${price}! (Payment ID: ${response.razorpay_payment_id})`);
+              if (refreshUser) refreshUser();
               window.scrollTo({ top: 0, behavior: 'smooth' });
               setTimeout(() => setSuccessMsg(''), 5000);
             })
@@ -145,6 +154,7 @@ export default function Settings() {
               console.warn('[Settings Page] Failed to persist credit top-up in database, updating locally:', err);
               setCredits(prev => prev + amount);
               setSuccessMsg(`Successfully purchased ${amount} AI Credits for ₹${price}! (Payment ID: ${response.razorpay_payment_id})`);
+              if (refreshUser) refreshUser();
               window.scrollTo({ top: 0, behavior: 'smooth' });
               setTimeout(() => setSuccessMsg(''), 5000);
             });
@@ -205,13 +215,20 @@ export default function Settings() {
               subscription: {
                 ...settings.subscription,
                 plan: `${plan} Plan`,
-                price: `₹${amount / 100}/mo`
+                price: `₹${amount / 100}/mo`,
+                transactionId: response.razorpay_payment_id,
+                paymentAmount: amount / 100
               }
             };
             setSettings(updated);
-            settingsApi.update(updated).catch(err => {
-              console.warn('[Settings Page] Could not save updated subscription plan in database:', err);
-            });
+            settingsApi.update(updated)
+              .then(() => {
+                if (refreshUser) refreshUser();
+              })
+              .catch(err => {
+                console.warn('[Settings Page] Could not save updated subscription plan in database:', err);
+                if (refreshUser) refreshUser();
+              });
           }
 
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -265,9 +282,14 @@ export default function Settings() {
           }
         };
         setSettings(updated);
-        settingsApi.update(updated).catch(err => {
-          console.warn('[Settings Page] Could not save updated subscription plan in database:', err);
-        });
+        settingsApi.update(updated)
+          .then(() => {
+            if (refreshUser) refreshUser();
+          })
+          .catch(err => {
+            console.warn('[Settings Page] Could not save updated subscription plan in database:', err);
+            if (refreshUser) refreshUser();
+          });
       }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -489,35 +511,35 @@ export default function Settings() {
                       {activePlan === 'Free' ? 'Current Plan' : (activePlan === 'Pro' || activePlan === 'Premium') ? 'Downgrade Disabled' : 'Select Free'}
                     </button>
                   </div>
- 
-                   {/* Pro Plan */}
-                   <div style={{
-                     border: activePlan === 'Pro' ? '2px solid var(--accent)' : '1px solid var(--border)',
-                     borderRadius: 'var(--radius-sm)',
-                     padding: '1.25rem',
-                     backgroundColor: 'var(--bg-card)',
-                     position: 'relative'
-                   }}>
-                     {activePlan === 'Pro' && <span className="badge badge-primary" style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '0.65rem' }}>Active</span>}
-                     <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Pro Plan</h3>
-                     <div style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0.5rem 0' }}>₹499<span style={{ fontSize: '0.8rem', fontWeight: 500 }}>/mo</span></div>
-                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Best for students & active job applicants seeking callback boosts.</p>
-                     <ul style={{ paddingLeft: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
-                       <li>Unlimited Tailoring</li>
-                       <li>Unlimited ATS Runs</li>
-                       <li>AI Cover Letters</li>
-                       <li>Interview Preparation</li>
-                       <li>Follow-up Reminders</li>
-                     </ul>
-                     <button
-                       type="button"
-                       onClick={() => selectSubscriptionPlan('Pro')}
-                       className={`btn ${activePlan === 'Pro' ? 'btn-primary' : 'btn-secondary'}`}
-                       style={{ width: '100%', fontSize: '0.75rem', opacity: activePlan === 'Premium' ? 0.5 : 1, cursor: activePlan === 'Premium' ? 'not-allowed' : 'pointer' }}
-                       disabled={activePlan === 'Premium'}
-                     >
-                       {activePlan === 'Pro' ? 'Current Plan' : activePlan === 'Premium' ? 'Downgrade Disabled' : 'Select Pro'}
-                     </button>
+
+                  {/* Pro Plan */}
+                  <div style={{
+                    border: activePlan === 'Pro' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '1.25rem',
+                    backgroundColor: 'var(--bg-card)',
+                    position: 'relative'
+                  }}>
+                    {activePlan === 'Pro' && <span className="badge badge-primary" style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '0.65rem' }}>Active</span>}
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Pro Plan</h3>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0.5rem 0' }}>₹499<span style={{ fontSize: '0.8rem', fontWeight: 500 }}>/mo</span></div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Best for students & active job applicants seeking callback boosts.</p>
+                    <ul style={{ paddingLeft: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
+                      <li>Unlimited Tailoring</li>
+                      <li>Unlimited ATS Runs</li>
+                      <li>AI Cover Letters</li>
+                      <li>Interview Preparation</li>
+                      <li>Follow-up Reminders</li>
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={() => selectSubscriptionPlan('Pro')}
+                      className={`btn ${activePlan === 'Pro' ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ width: '100%', fontSize: '0.75rem', opacity: activePlan === 'Premium' ? 0.5 : 1, cursor: activePlan === 'Premium' ? 'not-allowed' : 'pointer' }}
+                      disabled={activePlan === 'Premium'}
+                    >
+                      {activePlan === 'Pro' ? 'Current Plan' : activePlan === 'Premium' ? 'Downgrade Disabled' : 'Select Pro'}
+                    </button>
                   </div>
 
                   {/* Premium Plan */}
@@ -610,9 +632,9 @@ export default function Settings() {
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Active AI Credits Balance</span>
                   <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent)', marginTop: '0.25rem' }}>{credits} Credits</div>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                {/* <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
                   Used for premium voice analysis<br />and salary negotiator chats.
-                </div>
+                </div> */}
               </div>
 
               <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.75rem' }}>Buy AI Credits Bundle</h4>

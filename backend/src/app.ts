@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import routes from './routes';
 
 const app = express();
@@ -15,12 +16,22 @@ app.use(express.json());
 // Load all API endpoints
 app.use(routes);
 
-// Default root response for checks
-app.get('/', (req, res) => {
-  res.json({
-    app: 'AI Career Copilot API',
-    status: 'online',
-    version: '1.0.0'
+// Serve React frontend static files in production
+const publicPath = path.join(__dirname, '..', 'public');
+app.use(express.static(publicPath));
+
+// For any non-API route, return the React app (for client-side routing)
+app.get('*', (req, res) => {
+  const indexFile = path.join(publicPath, 'index.html');
+  res.sendFile(indexFile, (err) => {
+    if (err) {
+      // Fallback API status if no frontend files found
+      res.json({
+        app: 'AI Career Copilot API',
+        status: 'online',
+        version: '1.0.0'
+      });
+    }
   });
 });
 

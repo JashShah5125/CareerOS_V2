@@ -32,6 +32,7 @@ export default function Dashboard() {
   const totalApps = apps.length;
   const interviewsCount = apps.filter(a => a.status === 'INTERVIEW' || a.interviewDate).length;
   const upcomingInterviews = apps.filter(a => {
+    if (a.status === 'INTERVIEW') return true;
     if (!a.interviewDate) return false;
     return new Date(a.interviewDate) >= new Date(new Date().setHours(0,0,0,0));
   });
@@ -222,8 +223,8 @@ export default function Dashboard() {
                       <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)' }}>{app.role}</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>
-                        {app.interviewDate}
+                      <span className={app.interviewDate ? "badge badge-primary" : "badge badge-warning"} style={{ fontSize: '0.7rem' }}>
+                        {app.interviewDate || 'To be scheduled'}
                       </span>
                     </div>
                   </div>
@@ -246,7 +247,7 @@ export default function Dashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
                   <div>
                     <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>{latestResume.title}</span>
-                    <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active Active parsed resume</span>
+                    <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active parsed resume</span>
                   </div>
                   <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>Score {latestResume.score}</span>
                 </div>

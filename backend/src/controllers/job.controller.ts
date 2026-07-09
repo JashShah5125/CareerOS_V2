@@ -1,29 +1,65 @@
 import { Request, Response } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from '../prisma';
 import { getUserIdFromRequest } from './auth.controller';
 
-const getGenAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey === 'AIzaSyYourGeminiApiKeyHere' || apiKey.includes('YourGeminiApiKey')) {
-    return null;
+const fetchWithRetry = async (url: string, init: RequestInit, retries = 3): Promise<globalThis.Response> => {
+  try {
+    const res = await fetch(url, init);
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    return res;
+  } catch (err) {
+    if (retries > 0) {
+      console.warn(`[NLP Service Fetch] Failed to connect to ${url}. Retrying in 1000ms... (Remaining retries: ${retries})`, err);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return fetchWithRetry(url, init, retries - 1);
+    }
+    throw err;
   }
-  return new GoogleGenerativeAI(apiKey);
 };
 
 export const analyzeJob = async (req: Request, res: Response) => {
   try {
     const { jobDescription, resumeText, company, title } = req.body;
-    const genAI = getGenAI();
     const userId = await getUserIdFromRequest(req);
+
+    // Validate and decrement 1 credit for Job Matcher analysis
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.credits <= 0) {
+      return res.status(403).json({ error: 'Insufficient credits. Please top up your tokens balance.' });
+    }
+    await prisma.user.update({
+      where: { id: userId },
+      data: { credits: { decrement: 1 } }
+    });
 
     const jobTitle = title || 'Target Role';
     const companyName = company || 'Target Company';
 
-    if (!genAI) {
-      console.warn('[Job Controller] Gemini API key not found. Using mock job matching fallback.');
+    const nlpServiceUrl = process.env.NLP_SERVICE_URL || 'http://localhost:8000';
+    let resultObj: any = null;
+
+    try {
+      const response = await fetchWithRetry(`${nlpServiceUrl}/api/v1/job/match`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resumeText: resumeText || 'SUMMARY: Software Engineer experienced in development.',
+          jobDescription: jobDescription || 'Job description requirements.',
+          company: companyName,
+          role: jobTitle
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`FastAPI Job Match returned status code ${response.status}`);
+      }
+
+      resultObj = await response.json();
+      resultObj.id = `job-match-${Date.now()}`;
+    } catch (apiError: any) {
+      console.warn('[Job Controller] FastAPI matching failed, using mock job matching fallback:', apiError);
       
-      const mockResult = {
+      resultObj = {
         id: `mock-job-analysis-${Date.now()}`,
         matchScore: 68,
         requiredSkills: ['React', 'TypeScript', 'Vanilla CSS', 'Node.js', 'PostgreSQL', 'Docker', 'AWS'],
@@ -47,70 +83,7 @@ export const analyzeJob = async (req: Request, res: Response) => {
           companyInsight: 'Strong tech-centric developer culture with containerized deployments.'
         }
       };
-
-      // Save to database
-      try {
-        await prisma.job.create({
-          data: {
-            userId,
-            title: jobTitle,
-            company: companyName,
-            description: jobDescription || 'Mock description',
-            matchScore: mockResult.matchScore,
-            reqSkills: mockResult.requiredSkills,
-            missingSkills: mockResult.missingSkills,
-            expMatch: mockResult.experienceMatch.feedback,
-            eduMatch: mockResult.educationMatch.feedback,
-            recommendationSummary: mockResult.recommendationSummary
-          }
-        });
-      } catch (dbErr) {
-        console.warn('[Job Controller] Failed to save mock job in database:', dbErr);
-      }
-
-      return res.json(mockResult);
     }
-
-    if (!jobDescription) {
-      return res.status(400).json({ error: 'jobDescription is required.' });
-    }
-
-    const defaultResume = `
-      JANE DOE | (123) 456-7890 | jane.doe@example.com
-      SUMMARY: Frontend Software Engineer with 4 years experience in React, TypeScript, and Vanilla CSS. 
-      EXPERIENCE: TechCorp Inc. (React integrations, API links, REST architectures).
-      SKILLS: React, TypeScript, Node.js, Express, Vanilla CSS, REST APIs, PostgreSQL, Git.
-    `;
-
-    const inputResume = resumeText || defaultResume;
-
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: { responseMimeType: 'application/json' }
-    });
-
-    const systemPrompt = `
-      You are an expert technical parser. Compare the user's resume details with the target job posting description.
-      You must respond in strict JSON format. Output raw JSON matching this interface:
-
-      interface JobMatchResult {
-        matchScore: number; // 0 to 100
-        requiredSkills: string[];
-        missingSkills: string[];
-        experienceMatch: { status: string; required: string; detected: string; feedback: string };
-        educationMatch: { status: string; required: string; detected: string; feedback: string };
-        recommendationSummary: string;
-        jobInsights: { salaryEstimate: string; roleLevel: string; companyInsight: string };
-      }
-    `;
-
-    const response = await model.generateContent([
-      { text: systemPrompt },
-      { text: `Resume Content:\n${inputResume}\n\nJob Description:\n${jobDescription}` }
-    ]);
-
-    const resultObj = JSON.parse(response.response.text());
-    resultObj.id = `job-match-${Date.now()}`;
 
     // Save to database
     try {
@@ -119,7 +92,7 @@ export const analyzeJob = async (req: Request, res: Response) => {
           userId,
           title: jobTitle,
           company: companyName,
-          description: jobDescription,
+          description: jobDescription || 'Mock description',
           matchScore: resultObj.matchScore,
           reqSkills: resultObj.requiredSkills || [],
           missingSkills: resultObj.missingSkills || [],
@@ -136,5 +109,68 @@ export const analyzeJob = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[Job Controller] Error analyzing job:', error);
     return res.status(500).json({ error: 'Job description scan failed.', message: error.message });
+  }
+};
+
+export const getJobs = async (req: Request, res: Response) => {
+  try {
+    const userId = await getUserIdFromRequest(req);
+    const jobs = await prisma.job.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    return res.json(jobs);
+  } catch (error: any) {
+    console.error('[Job Controller] Error fetching jobs:', error);
+    return res.status(500).json({ error: 'Database read error', message: error.message });
+  }
+};
+
+export const createJob = async (req: Request, res: Response) => {
+  try {
+    const userId = await getUserIdFromRequest(req);
+    const { title, company, description } = req.body;
+
+    if (!title || !company || !description) {
+      return res.status(400).json({ error: 'title, company, and description are required' });
+    }
+
+    const created = await prisma.job.create({
+      data: {
+        userId,
+        title,
+        company,
+        description
+      }
+    });
+
+    return res.status(201).json(created);
+  } catch (error: any) {
+    console.error('[Job Controller] Error creating job:', error);
+    return res.status(500).json({ error: 'Database create error', message: error.message });
+  }
+};
+
+export const deleteJob = async (req: Request, res: Response) => {
+  try {
+    const userId = await getUserIdFromRequest(req);
+    const { id } = req.params;
+
+    const job = await prisma.job.findUnique({ where: { id } });
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    if (job.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    await prisma.job.delete({ where: { id } });
+    await prisma.application.deleteMany({ where: { jobId: id } });
+
+    return res.json({ message: 'Job and associated tracking cards deleted successfully' });
+  } catch (error: any) {
+    console.error('[Job Controller] Error deleting job:', error);
+    return res.status(500).json({ error: 'Database delete error', message: error.message });
   }
 };

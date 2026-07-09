@@ -82,11 +82,15 @@ export default function Kanban({ applications, onUpdateStatus, onDelete, onAddCa
                   onClick={() => onCardClick(app)}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                    <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>{app.company}</h4>
+                    <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {app.candidateName || app.company}
+                    </h4>
                     <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--accent)' }}>{app.salary}</span>
                   </div>
                   
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', fontWeight: 500 }}>{app.role}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', fontWeight: 500 }}>
+                    {app.candidateName ? `${app.role} @ ${app.company}` : app.role}
+                  </p>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
