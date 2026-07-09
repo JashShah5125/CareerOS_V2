@@ -31,7 +31,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
         .finally(() => setLoading(false));
     };
 
-    try {
+    const initializeGoogle = () => {
       const google = (window as any).google;
       if (google && google.accounts && google.accounts.id) {
         google.accounts.id.initialize({
@@ -39,13 +39,33 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
           callback: handleGoogleCallback
         });
 
+        // Calculate responsive width for Google Button on mobile
+        const container = document.getElementById('google-signin-btn-div');
+        const containerWidth = container ? container.offsetWidth : 380;
+        const buttonWidth = Math.max(200, Math.min(400, containerWidth || 320));
+
         google.accounts.id.renderButton(
           document.getElementById('google-signin-btn-div'),
-          { theme: 'outline', size: 'large', width: 384 }
+          { 
+            theme: 'outline', 
+            size: 'large', 
+            width: buttonWidth 
+          }
         );
+        return true;
       }
-    } catch (e) {
-      console.warn('Google Identity Services script not loaded:', e);
+      return false;
+    };
+
+    // Try initializing immediately
+    if (!initializeGoogle()) {
+      // If script not loaded yet, check every 300ms until loaded
+      const interval = setInterval(() => {
+        if (initializeGoogle()) {
+          clearInterval(interval);
+        }
+      }, 300);
+      return () => clearInterval(interval);
     }
   }, [view]);
 
