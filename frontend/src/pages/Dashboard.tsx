@@ -129,6 +129,14 @@ export default function Dashboard() {
           align-items: center;
           gap: 1rem;
         }
+        .dashboard-scroll-list {
+          max-height: 320px;
+          overflow-y: auto;
+        }
+        .dashboard-scroll-list-sm {
+          max-height: 220px;
+          overflow-y: auto;
+        }
         @media (max-width: 640px) {
           .dashboard-header {
             flex-direction: column;
@@ -137,6 +145,13 @@ export default function Dashboard() {
           .dashboard-header a {
             width: 100%;
             justify-content: center;
+          }
+        }
+        @media (max-width: 768px) {
+          .dashboard-scroll-list,
+          .dashboard-scroll-list-sm {
+            max-height: none;
+            overflow-y: visible;
           }
         }
       `}</style>
@@ -175,7 +190,7 @@ export default function Dashboard() {
         {/* Left Column: AI Recommendations */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <Card title="AI Copilot Recommendations" subtitle="Tailored insights based on database uploads and applications">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '320px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+            <div className="dashboard-scroll-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingRight: '0.25rem' }}>
               {recommendations.map(rec => (
                 <div
                   key={rec.id}
@@ -225,7 +240,7 @@ export default function Dashboard() {
             {loading ? (
               <p>Loading interviews...</p>
             ) : upcomingInterviews.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '220px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+              <div className="dashboard-scroll-list-sm" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
                 {upcomingInterviews.map(app => (
                   <div
                     key={app.id}
@@ -235,7 +250,9 @@ export default function Dashboard() {
                       alignItems: 'center',
                       padding: '0.75rem 1rem',
                       border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-sm)'
+                      borderRadius: 'var(--radius-sm)',
+                      flexWrap: 'wrap',
+                      gap: '0.75rem'
                     }}
                   >
                     <div>
@@ -264,7 +281,16 @@ export default function Dashboard() {
           <Card title="Active Resume Documents" subtitle="Manage your database parsed resumes">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {latestResume ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  padding: '0.75rem 1rem', 
+                  border: '1px solid var(--border)', 
+                  borderRadius: 'var(--radius-sm)',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem'
+                }}>
                   <div>
                     <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>{latestResume.title}</span>
                     <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active parsed resume</span>
