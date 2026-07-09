@@ -110,16 +110,36 @@ export default function Dashboard() {
 
   return (
     <div>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="dashboard-header">
         <div>
           <h1>Career Dashboard</h1>
           <p>Welcome back! Here is a summary of your career copilot activities and progress.</p>
         </div>
-        <Link to="/analyzer" className="btn btn-primary">
+        <Link to="/analyzer" className="btn btn-primary" style={{ flexShrink: 0 }}>
           <Sparkles size={16} />
           <span>Optimize Resume</span>
         </Link>
       </header>
+
+      <style>{`
+        .dashboard-header {
+          margin-bottom: 2rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 1rem;
+        }
+        @media (max-width: 640px) {
+          .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .dashboard-header a {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      `}</style>
 
       {/* Main Metric Cards Row */}
       <div className="grid-4" style={{ marginBottom: '2rem' }}>
