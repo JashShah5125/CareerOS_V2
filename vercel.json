@@ -1,0 +1,16 @@
+{
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "vite"
+    },
+    "backend": {
+      "root": "backend",
+      "framework": "other"
+    },
+    "nlp": {
+      "root": "fastapi-nlp-service",
+      "framework": "other"
+    }
+  }
+}
