@@ -388,45 +388,47 @@ export default function AtsAnalyzer({
 
             {/* Application Matching Matrix */}
             <Card title="Application Matching Matrix" subtitle="Separated scoring dimensions mapping layout compliance and relative skill alignments">
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.25rem', fontSize: '0.78rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                    <th style={{ padding: '0.35rem 0.25rem', color: 'var(--text-secondary)' }}>Metric</th>
-                    <th style={{ padding: '0.35rem 0.25rem', color: 'var(--text-secondary)' }}>What it measures</th>
-                    <th style={{ padding: '0.35rem 0.25rem', textAlign: 'right', color: 'var(--text-secondary)' }}>Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '0.45rem 0.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>ATS-friendly Formatting (Heuristics)</td>
-                    <td style={{ padding: '0.45rem 0.25rem', color: 'var(--text-secondary)' }}>Heuristic checks for headings, standard date formats, columns structure, and graphics</td>
-                    <td style={{ padding: '0.45rem 0.25rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>
-                      {result.atsCompatibility ?? 80}/100
-                    </td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '0.45rem 0.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Job Match Score</td>
-                    <td style={{ padding: '0.45rem 0.25rem', color: 'var(--text-secondary)' }}>Relative checks for skills, experience, education, projects vs. target JD</td>
-                    <td style={{ padding: '0.45rem 0.25rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>
-                      {result.jobMatchScore ?? 64}/100
-                    </td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '0.45rem 0.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Resume Quality</td>
-                    <td style={{ padding: '0.45rem 0.25rem', color: 'var(--text-secondary)' }}>Action verbs, quantitative metrics, clarity, achievements</td>
-                    <td style={{ padding: '0.45rem 0.25rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>
-                      {result.resumeQuality ?? 58}/100
-                    </td>
-                  </tr>
-                  <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                    <td style={{ padding: '0.5rem 0.25rem', color: 'var(--text-primary)' }}>Application Match</td>
-                    <td style={{ padding: '0.5rem 0.25rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>Weighted combo (30% Formatting + 50% Match + 20% Quality)</td>
-                    <td style={{ padding: '0.5rem 0.25rem', textAlign: 'right', color: 'var(--success)' }}>
-                      {result.overallScore}/100
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <div style={{ overflowX: 'auto', width: '100%' }}>
+                <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', marginTop: '0.25rem', fontSize: '0.78rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
+                      <th style={{ padding: '0.35rem 0.25rem', color: 'var(--text-secondary)' }}>Metric</th>
+                      <th style={{ padding: '0.35rem 0.25rem', color: 'var(--text-secondary)' }}>What it measures</th>
+                      <th style={{ padding: '0.35rem 0.25rem', textAlign: 'right', color: 'var(--text-secondary)' }}>Score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '0.45rem 0.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>ATS-friendly Formatting (Heuristics)</td>
+                      <td style={{ padding: '0.45rem 0.25rem', color: 'var(--text-secondary)' }}>Heuristic checks for headings, standard date formats, columns structure, and graphics</td>
+                      <td style={{ padding: '0.45rem 0.25rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>
+                        {result.atsCompatibility ?? 80}/100
+                      </td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '0.45rem 0.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Job Match Score</td>
+                      <td style={{ padding: '0.45rem 0.25rem', color: 'var(--text-secondary)' }}>Relative checks for skills, experience, education, projects vs. target JD</td>
+                      <td style={{ padding: '0.45rem 0.25rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>
+                        {result.jobMatchScore ?? 64}/100
+                      </td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '0.45rem 0.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Resume Quality</td>
+                      <td style={{ padding: '0.45rem 0.25rem', color: 'var(--text-secondary)' }}>Action verbs, quantitative metrics, clarity, achievements</td>
+                      <td style={{ padding: '0.45rem 0.25rem', textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>
+                        {result.resumeQuality ?? 58}/100
+                      </td>
+                    </tr>
+                    <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
+                      <td style={{ padding: '0.5rem 0.25rem', color: 'var(--text-primary)' }}>Application Match</td>
+                      <td style={{ padding: '0.5rem 0.25rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>Weighted combo (30% Formatting + 50% Match + 20% Quality)</td>
+                      <td style={{ padding: '0.5rem 0.25rem', textAlign: 'right', color: 'var(--success)' }}>
+                        {result.overallScore}/100
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </Card>
           </div>
 
