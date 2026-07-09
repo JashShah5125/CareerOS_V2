@@ -28,6 +28,10 @@
     {
       "source": "/calculate_ats_score",
       "destination": "https://career-os-v2-l1ig.vercel.app/calculate_ats_score"
+    },
+    {
+      "source": "/((?!api|assets|favicon.ico).*)",
+      "destination": "/index.html"
     }
   ]
 }
