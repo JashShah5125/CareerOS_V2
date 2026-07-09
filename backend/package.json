@@ -4,7 +4,8 @@
   "description": "Backend services for AI Career Copilot",
   "main": "dist/server.js",
   "scripts": {
-    "build": "prisma generate && tsc",
+    "postinstall": "prisma generate",
+    "build": "tsc",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "prisma:generate": "prisma generate",
