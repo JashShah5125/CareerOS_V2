@@ -324,6 +324,17 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
         .divider-line::after {
           margin-left: .5em;
         }
+        @media (max-width: 480px) {
+          .auth-wrapper {
+            padding: 1rem 0.75rem;
+          }
+          .auth-wrapper .card {
+            padding: 1.5rem 1.15rem !important;
+          }
+          .auth-card-container h2 {
+            font-size: 1.35rem !important;
+          }
+        }
       `}</style>
     </div>
   );

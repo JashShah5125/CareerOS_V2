@@ -347,10 +347,10 @@ export default function Settings({ refreshUser }: SettingsProps) {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '2rem', alignItems: 'start' }}>
+      <div className="settings-layout">
         {/* Navigation Sidebar */}
         <Card style={{ padding: '0.75rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <div className="settings-tabs">
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', padding: '0.5rem', fontWeight: 600, letterSpacing: '0.05em' }}>PREFERENCES</span>
             <button style={tabStyle('profile')} onClick={() => setActiveTab('profile')}>
               <User size={16} />
@@ -955,6 +955,44 @@ export default function Settings({ refreshUser }: SettingsProps) {
 
         </div>
       </div>
+      <style>{`
+        .settings-layout {
+          display: grid;
+          grid-template-columns: 260px 1fr;
+          gap: 2rem;
+          align-items: start;
+        }
+        .settings-tabs {
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+        }
+        @media (max-width: 768px) {
+          .settings-layout {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+          .settings-tabs {
+            flex-direction: row;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+          }
+          .settings-tabs::-webkit-scrollbar {
+            display: none;
+          }
+          .settings-tabs span {
+            display: none !important;
+          }
+          .settings-tabs button {
+            width: auto !important;
+            flex-shrink: 0;
+            padding: 0.5rem 0.85rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
