@@ -39,10 +39,10 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
           callback: handleGoogleCallback
         });
 
-        // Calculate responsive width for Google Button on mobile
-        const container = document.getElementById('google-signin-btn-div');
-        const containerWidth = container ? container.offsetWidth : 380;
-        const buttonWidth = Math.max(200, Math.min(400, containerWidth || 320));
+        // Mathematically calculate exact width matching screen bounds
+        const paddingOffset = window.innerWidth < 480 ? 64 : 100;
+        const maxAvailableWidth = window.innerWidth - paddingOffset;
+        const buttonWidth = Math.max(200, Math.min(380, maxAvailableWidth));
 
         google.accounts.id.renderButton(
           document.getElementById('google-signin-btn-div'),
@@ -81,7 +81,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
           onLoginSuccess(res.user, res.token);
         })
         .catch(err => {
-          setError(err.message || 'Login failed');
+          setError(err.message || 'Invalid email or password.');
         })
         .finally(() => setLoading(false));
     } else if (view === 'register') {
@@ -90,16 +90,16 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
           onLoginSuccess(res.user, res.token);
         })
         .catch(err => {
-          setError(err.message || 'Registration failed');
+          setError(err.message || 'Registration failed.');
         })
         .finally(() => setLoading(false));
     } else {
       authApi.forgotPassword(email)
         .then(res => {
-          setMessage(res.message);
+          setMessage(res.message || 'Password reset instructions sent.');
         })
         .catch(err => {
-          setError(err.message || 'Forgot password request failed');
+          setError(err.message || 'Failed to send password reset email.');
         })
         .finally(() => setLoading(false));
     }
@@ -108,15 +108,14 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
   return (
     <div className="auth-wrapper">
       <div className="auth-card-container">
-        {/* Brand logo top */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '48px',
-            height: '48px',
-            borderRadius: '12px',
+          <div style={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            width: '48px', 
+            height: '48px', 
+            borderRadius: '12px', 
             backgroundColor: 'var(--accent-light)',
             color: 'var(--accent)',
             marginBottom: '0.75rem'
@@ -131,7 +130,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
           </p>
         </div>
 
-        <Card style={{ padding: '2rem 1.75rem', boxShadow: 'var(--shadow-lg)' }}>
+        <Card className="auth-card" style={{ boxShadow: 'var(--shadow-lg)' }}>
           {error && (
             <div className="badge badge-danger" style={{ display: 'block', padding: '0.75rem', width: '100%', marginBottom: '1rem', borderRadius: '4px', textAlign: 'center' }}>
               {error}
@@ -324,11 +323,14 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
         .divider-line::after {
           margin-left: .5em;
         }
+        .auth-card {
+          padding: 2.25rem 2rem;
+        }
         @media (max-width: 480px) {
           .auth-wrapper {
             padding: 1rem 0.75rem;
           }
-          .auth-wrapper .card {
+          .auth-card {
             padding: 1.5rem 1.15rem !important;
           }
           .auth-card-container h2 {
