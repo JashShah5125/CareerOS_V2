@@ -42,7 +42,11 @@ router.post('/api/ats/parse-file', upload.single('file'), async (req, res) => {
   }
   try {
     const text = await extractTextFromBuffer(req.file.buffer, req.file.mimetype);
-    return res.json({ text });
+    return res.json({ 
+      size: req.file.buffer.length,
+      mimeType: req.file.mimetype,
+      text 
+    });
   } catch (error: any) {
     console.error('[ATS Routes] File parsing failed:', error);
     return res.status(500).json({ error: 'Failed to parse file text.', message: error.message });
