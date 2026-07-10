@@ -37,14 +37,26 @@ router.post('/api/resume/calculate-ats', calculateAtsScore);
 router.get('/api/resume/latest', getLatestResume);
 router.post('/api/ats/analyze', upload.single('file'), analyzeAtsCustom);
 router.post('/api/ats/parse-file', upload.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded.' });
+  let buffer: Buffer | undefined;
+  let mimeType: string | undefined;
+
+  if (req.file) {
+    buffer = req.file.buffer;
+    mimeType = req.file.mimetype;
+  } else if (req.body.fileBase64) {
+    buffer = Buffer.from(req.body.fileBase64, 'base64');
+    mimeType = req.body.fileType || 'application/pdf';
   }
+
+  if (!buffer || !mimeType) {
+    return res.status(400).json({ error: 'No file uploaded or provided.' });
+  }
+
   try {
-    const text = await extractTextFromBuffer(req.file.buffer, req.file.mimetype);
+    const text = await extractTextFromBuffer(buffer, mimeType);
     return res.json({ 
-      size: req.file.buffer.length,
-      mimeType: req.file.mimetype,
+      size: buffer.length,
+      mimeType,
       text 
     });
   } catch (error: any) {

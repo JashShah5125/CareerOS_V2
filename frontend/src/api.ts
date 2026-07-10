@@ -292,23 +292,37 @@ export interface AtsAnalysisResult {
   };
 }
 
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
 export const atsApi = {
-  analyzeCustom: (resume: File | string, jobDescription: string) => {
-    const token = localStorage.getItem('token');
+  analyzeCustom: async (resume: File | string, jobDescription: string) => {
     if (resume instanceof File) {
-      const formData = new FormData();
-      formData.append('file', resume);
-      formData.append('jobDescription', jobDescription);
-      return fetch('/api/ats/analyze', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
-      }).then(res => {
-        if (!res.ok) throw new Error('ATS analysis failed');
-        return res.json() as Promise<AtsAnalysisResult>;
-      });
+      try {
+        const base64 = await fileToBase64(resume);
+        return request<AtsAnalysisResult>('/api/ats/analyze', {
+          method: 'POST',
+          body: JSON.stringify({
+            fileBase64: base64,
+            fileName: resume.name,
+            fileType: resume.type || 'application/pdf',
+            jobDescription
+          })
+        });
+      } catch (e: any) {
+        console.error('[API Client] Base64 encoding failed:', e);
+        throw new Error('Failed to encode file for analysis.');
+      }
     } else {
       return request<AtsAnalysisResult>('/api/ats/analyze', {
         method: 'POST',
@@ -316,24 +330,21 @@ export const atsApi = {
       });
     }
   },
-  parseFile: (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const token = localStorage.getItem('token');
-    return fetch('/api/ats/parse-file', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      }
-    }).then(res => {
-      if (!res.ok) {
-        return res.json().then(err => {
-          throw new Error(err.error || 'Failed to extract text from file.');
-        });
-      }
-      return res.json() as Promise<{ text: string }>;
-    });
+  parseFile: async (file: File) => {
+    try {
+      const base64 = await fileToBase64(file);
+      return request<{ size: number; mimeType: string; text: string }>('/api/ats/parse-file', {
+        method: 'POST',
+        body: JSON.stringify({
+          fileBase64: base64,
+          fileName: file.name,
+          fileType: file.type || 'application/pdf'
+        })
+      });
+    } catch (e: any) {
+      console.error('[API Client] Base64 encoding failed:', e);
+      throw new Error('Failed to encode file for parsing.');
+    }
   }
 };
 

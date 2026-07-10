@@ -6,10 +6,13 @@ import { extractTextFromBuffer } from '../services/parser.service';
 
 export const analyzeAtsCustom = async (req: Request, res: Response) => {
   try {
-    let { resumeText, jobDescription } = req.body;
+    let { resumeText, jobDescription, fileBase64, fileType } = req.body;
 
     if (req.file) {
       resumeText = await extractTextFromBuffer(req.file.buffer, req.file.mimetype);
+    } else if (fileBase64) {
+      const buffer = Buffer.from(fileBase64, 'base64');
+      resumeText = await extractTextFromBuffer(buffer, fileType || 'application/pdf');
     }
 
     if (!resumeText || !jobDescription) {
