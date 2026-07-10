@@ -117,40 +117,41 @@ export const updateSettings = async (req: Request, res: Response) => {
 
 // Check local Ollama connection or Groq API status based on env setup
 export const getModelStatus = async (req: Request, res: Response) => {
+  const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+  const targetModel = process.env.OLLAMA_MODEL || 'llama3.2:3b';
+
   try {
-    const nlpServiceUrl = process.env.NLP_SERVICE_URL || 'http://localhost:8000';
-    
-    // Fetch status directly from the local Python FastAPI NLP Microservice
-    const response = await fetch(`${nlpServiceUrl}/api/v1/status`);
+    const response = await fetch(`${ollamaUrl}/api/tags`);
     if (!response.ok) {
-      return res.json({
-        status: 'OFFLINE',
-        model: 'Local Cosine Similarity Matrix',
-        ollamaUrl: nlpServiceUrl,
-        modelPulled: false,
-        availableModels: [],
-        error: 'FastAPI NLP Microservice returned error code'
-      });
+      throw new Error(`Ollama returned status ${response.status}`);
     }
-    
+
     const data = await response.json() as any;
+    const models = data.models || [];
+    const modelNames = models.map((m: any) => m.name);
     
+    // Check if our target model is pulled
+    const targetModelClean = targetModel.toLowerCase().trim();
+    const isPulled = modelNames.some((name: string) => 
+      name.toLowerCase().includes(targetModelClean) || targetModelClean.includes(name.toLowerCase())
+    );
+
     return res.json({
-      status: data.status,
-      model: data.model,
-      ollamaUrl: data.endpoint,
-      modelPulled: data.status === 'ONLINE',
-      availableModels: data.modelsPulled || [data.model],
-      error: `Connected via Port 8000 Python NLP Microservice (${data.engine})`
+      status: 'ONLINE',
+      model: targetModel,
+      ollamaUrl: ollamaUrl,
+      modelPulled: isPulled,
+      availableModels: modelNames,
+      error: ''
     });
   } catch (err: any) {
     return res.json({
       status: 'OFFLINE',
-      model: 'Local Cosine Similarity Matrix',
-      ollamaUrl: 'http://localhost:8000',
+      model: targetModel,
+      ollamaUrl: ollamaUrl,
       modelPulled: false,
       availableModels: [],
-      error: `Connection to Port 8000 Python NLP Service failed: ${err.message}`
+      error: `Connection to local Ollama failed: ${err.message}`
     });
   }
 };
