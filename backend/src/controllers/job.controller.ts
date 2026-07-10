@@ -29,7 +29,7 @@ You are an expert technical recruiter AI. Your task is to compare a candidate's 
 
 Output raw JSON matching this exact structure:
 {
-  "matchScore": 85, // 0 to 100 overall score based on skills, experience, and education alignment
+  "matchScore": 85, // 0 to 100 overall score based on skills, experience, and education alignment. CRITICAL SCORING RULE: If the candidate matches 0 required skills, has an experience mismatch, and has an education mismatch, the 'matchScore' MUST be exactly 0.
   "requiredSkills": ["React", "TypeScript", "Node.js", "Docker"], // Major technical and soft skills extracted from the JD
   "missingSkills": ["Docker"], // Skills required/preferred in the JD that are not evidenced in the candidate's resume
   "experienceMatch": {
