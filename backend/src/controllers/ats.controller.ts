@@ -51,10 +51,11 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       9. CANDIDATE & JOB METADATA EXTRACTION:
          - Precisely extract the candidate's full name, email, and phone number from the Resume Text.
          - Extract or guess the target company name and role/job title from the Job Description.
-      10. DOMAIN MISMATCH CHECK:
-          - Check if the main career domain of the candidate's Resume Text matches the target Job Description domain.
-          - If they are completely different, unrelated tracks (e.g. candidate is a Graphic Designer, HR Specialist, or Nurse, but the job is for a Software Developer, Sales Executive, or Accountant), set "isDomainMismatch" to true and write a clear, friendly explanation in "domainMismatchMessage" (e.g. "Resume main career domain (HR) does not match the target Job Description career domain (FINANCE)").
-          - If the domains are compatible, related, or overlap (e.g. Data Analyst applying for Software Engineer, or Fullstack Developer applying for Backend Developer, or marketing specialist applying for sales), set "isDomainMismatch" to false and "domainMismatchMessage" to an empty string.
+      10. DOMAIN MISMATCH CHECK (CRITICAL & STRICT):
+          - Evaluate if the candidate's core functional role track (e.g., HR/Recruitment, Nursing, Accountant, Graphic Design) is fundamentally different from the target Job Description's functional role track (e.g., Software Engineering, Sales Executive, Medical Doctor).
+          - BE EXTREMELY STRICT: If a candidate's primary experience is in Human Resources (HR), Talent Acquisition, or Recruiting, and the Job Description is for a Software Developer or Engineer, this is a 100% domain mismatch. Do NOT excuse this mismatch just because the HR resume contains tech buzzwords or mentions recruiting software engineers.
+          - If they are mismatched functional tracks, set "isDomainMismatch" to true and write a clear, friendly explanation in "domainMismatchMessage" detailing the mismatch (e.g., "Resume main career domain (Human Resources) does not match the target Job Description career domain (Software Engineering)").
+          - Only set "isDomainMismatch" to false if the domains have direct functional overlap (e.g., Frontend Developer to Fullstack Developer, or Data Analyst to Data Scientist).
 
       You must respond in strict JSON format. Output raw JSON matching this exact interface:
 
