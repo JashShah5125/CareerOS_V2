@@ -1,4 +1,4 @@
-import pdf from 'pdf-parse';
+import pdf from 'pdf-parse-fork';
 import mammoth from 'mammoth';
 
 // Clean up parsed PDF text, merging trailing single-character bullets and removing excessive whitespace gaps
@@ -96,29 +96,7 @@ export async function extractTextFromBuffer(buffer: Buffer, mimeType: string): P
         const data = await pdf(buffer, options);
         return sanitizeParsedText(data.text || '');
       } catch (pdfError: any) {
-        console.warn('[Parser Service] pdf-parse failed, trying Python fallback parser:', pdfError.message);
-        try {
-          const nlpServiceUrl = process.env.NLP_SERVICE_URL || 'http://localhost:8000';
-          const formData = new FormData();
-          const blob = new Blob([buffer as any], { type: 'application/pdf' });
-          formData.append('file', blob, 'resume.pdf');
-
-          const response = await fetch(`${nlpServiceUrl}/api/v1/pdf/parse`, {
-            method: 'POST',
-            body: formData
-          });
-
-          if (response.ok) {
-            const result: any = await response.json();
-            if (result.text && result.text.trim()) {
-              console.log('[Parser Service] Successfully fell back to Python pypdf extractor!');
-              return sanitizeParsedText(result.text);
-            }
-          }
-        } catch (fallbackError: any) {
-          console.error('[Parser Service] Python fallback parser failed:', fallbackError.message);
-        }
-
+        console.warn('[Parser Service] Primary pdf-parse-fork failed, falling back to basic conversion:', pdfError.message);
         const fallbackRaw = buffer.toString('ascii').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
         return sanitizeParsedText(fallbackRaw);
       }
@@ -139,6 +117,7 @@ export async function extractTextFromBuffer(buffer: Buffer, mimeType: string): P
     }
   } catch (error: any) {
     console.error('[Parser Service] Critical fallback failure:', error);
-    throw error;
+    const fallbackRaw = buffer.toString('ascii').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
+    return sanitizeParsedText(fallbackRaw);
   }
 }

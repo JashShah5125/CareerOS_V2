@@ -21,7 +21,7 @@
     "google-auth-library": "^10.9.0",
     "mammoth": "^1.12.0",
     "multer": "^2.2.0",
-    "pdf-parse": "^1.1.1",
+    "pdf-parse-fork": "^1.2.0",
     "prisma": "^5.10.2"
   },
   "devDependencies": {
