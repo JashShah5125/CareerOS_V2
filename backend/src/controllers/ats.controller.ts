@@ -548,7 +548,18 @@ const classifyDomain = (text: string): string => {
 
   for (const [cat, keywords] of Object.entries(categories)) {
     const count = keywords.reduce((acc, kw) => {
-      const occurrences = clean.split(kw).length - 1;
+      // Escape special regex characters safely
+      const escapedKw = kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      
+      let regex;
+      // Use word boundaries only for purely alphanumeric keywords to avoid breaking tags like C++ or .NET
+      if (escapedKw.match(/^[a-zA-Z0-9_]+$/)) {
+        regex = new RegExp(`\\b${escapedKw}\\b`, 'gi');
+      } else {
+        regex = new RegExp(escapedKw, 'gi');
+      }
+
+      const occurrences = (clean.match(regex) || []).length;
       return acc + occurrences;
     }, 0);
     
