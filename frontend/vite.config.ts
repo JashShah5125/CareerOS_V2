@@ -1,22 +1,26 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const proxyTarget = {
+  target: 'http://localhost:5001',
+  changeOrigin: true,
+  timeout: 180000,      // 3 minutes (180,000ms) for local Ollama completions
+  proxyTimeout: 180000  // 3 minutes
+};
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
     proxy: {
-      '/api': {
-        target: 'http://localhost:5001',
-        changeOrigin: true
-      },
-      '/analyze_resume': 'http://localhost:5001',
-      '/analyze_job': 'http://localhost:5001',
-      '/generate_cover_letter': 'http://localhost:5001',
-      '/tailor_resume': 'http://localhost:5001',
-      '/generate_interview_questions': 'http://localhost:5001',
-      '/calculate_ats_score': 'http://localhost:5001'
+      '/api': proxyTarget,
+      '/analyze_resume': proxyTarget,
+      '/analyze_job': proxyTarget,
+      '/generate_cover_letter': proxyTarget,
+      '/tailor_resume': proxyTarget,
+      '/generate_interview_questions': proxyTarget,
+      '/calculate_ats_score': proxyTarget
     }
   }
 });
