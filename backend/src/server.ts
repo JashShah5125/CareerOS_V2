@@ -4,6 +4,13 @@ import app from './app';
 
 dotenv.config();
 
+// Disable Vercel automatic body parsing to allow raw binary multipart uploads
+export const config = {
+  api: {
+    bodyParser: false
+  }
+};
+
 // Run Prisma generate and db push only when NOT running on Vercel (e.g. local or Plesk)
 if (!process.env.VERCEL) {
   try {
