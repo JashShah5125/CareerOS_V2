@@ -118,9 +118,14 @@ export async function extractTextFromBuffer(buffer: Buffer, mimeType: string): P
         const data = await pdf(buffer, options);
         return sanitizeParsedText(data.text || '');
       } catch (pdfError: any) {
-        console.warn('[Parser Service] Primary pdf-parse-fork failed, falling back to basic conversion:', pdfError.message);
-        const fallbackRaw = buffer.toString('ascii').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
-        return sanitizeParsedText(fallbackRaw);
+        console.warn('[Parser Service] Primary custom render pdf-parse failed, falling back to standard pdf-parse:', pdfError.message);
+        try {
+          const standardData = await pdf(buffer);
+          return sanitizeParsedText(standardData.text || '');
+        } catch (stdPdfError: any) {
+          console.error('[Parser Service] Standard pdf-parse also failed:', stdPdfError.message);
+          throw stdPdfError;
+        }
       }
     } else if (
       normalizedMime.includes('word') || 
