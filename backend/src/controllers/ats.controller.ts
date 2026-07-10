@@ -16,6 +16,42 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Both resumeText and jobDescription are required.' });
     }
 
+    const resumeDomain = classifyDomain(resumeText);
+    const jdDomain = classifyDomain(jobDescription);
+
+    if (resumeDomain !== 'general' && jdDomain !== 'general' && resumeDomain !== jdDomain) {
+      return res.json({
+        overallScore: 0,
+        isDomainMismatch: true,
+        domainMismatchMessage: `Resume main career domain (${resumeDomain.toUpperCase()}) does not match the target Job Description career domain (${jdDomain.toUpperCase()}).`,
+        subScores: { formatting: 0, keywordMatch: 0, experienceMatch: 0, projects: 0, education: 0, softSkills: 0 },
+        strengthMetrics: { atsParsing: 0, technicalSkills: 0, projects: 0, experience: 0, quantifiedResults: 0 },
+        keywordDensity: [],
+        scoreDeductions: [],
+        tailoredBulletPoints: [],
+        matchedKeywords: [],
+        missingKeywords: [],
+        redFlags: [`Domain mismatch: Resume is ${resumeDomain.toUpperCase()} but Job is ${jdDomain.toUpperCase()}`],
+        complianceChecklist: {
+          hasContactInfo: false,
+          isSingleColumn: false,
+          hasWorkHistory: false,
+          hasSkillsSection: false,
+          noGraphics: false,
+          hasSummarySection: false,
+          hasAddress: false,
+          friendlyHeadings: false,
+          standardDateFormats: false,
+          jobTitleMentioned: false,
+          quantifiedAchievements: false,
+          idealWordCount: false
+        },
+        improvementSuggestions: [`The resume domain (${resumeDomain.toUpperCase()}) does not match the job description domain (${jdDomain.toUpperCase()}). Please tailor your resume specifically for this career track.`],
+        candidateDetails: { candidateName: '', candidateEmail: '', candidatePhone: '' },
+        jobDetails: { company: '', role: '' }
+      });
+    }
+
     const systemPrompt = `
       You are an advanced ATS (Applicant Tracking System) parser and ranking algorithm.
       Compare the candidate's Resume Text against the target Job Description.
@@ -31,8 +67,8 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       3. DETECT EXPERIENCE PATTERNS:
          - Look for experience indicators (e.g., terms like "version control", "pull requests", "schemas", "unit testing") to check if they have real experience.
       4. WEIGHTED ATS SCORE FORMULA:
-         - Calculate the "overallScore" based on this weighted formula:
-           overallScore = (subScores.formatting * 0.3) + (subScores.keywordMatch * 0.3) + (subScores.experienceMatch * 0.2) + (subScores.projects * 0.1) + (subScores.education * 0.05) + (subScores.softSkills * 0.05)
+         - Calculate the "overallScore" based strictly on the percentage of keywords and skills matched and present in the resume relative to the requirements in the job description (keywordMatch score). Ignore formatting, experience years, projects, or education in the overall score calculation.
+         - overallScore = keywordMatch score.
       5. KEYWORD DENSITY MATRIX:
          - Count the frequency of key words in the Job Description vs the Resume.
          - Provide explanations for each (e.g., "Laravel appears 10 times in the JD but is missing from your resume").
@@ -50,7 +86,7 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       You must respond in strict JSON format. Output raw JSON matching this exact interface:
 
       interface AtsAnalysisResult {
-        overallScore: number; // 0 to 100 calculated using the weighted formula
+        overallScore: number; // 0 to 100 calculated using the matched skills percentage
         subScores: {
           formatting: number; // 0 to 100 (30% weight)
           keywordMatch: number; // 0 to 100 (30% weight)
@@ -259,9 +295,11 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       }
       
       const formattingScore = Math.min(100, 50 + (detectedSections.length * 12));
-      const keywordMatchScore = Math.max(0, 100 - (missingKeywords.length * 20));
+      const totalKeywords = keywordDensity.length || 1;
+      const matchedKeywordsCount = keywordDensity.filter(k => k.countInResume > 0).length;
+      const keywordMatchScore = Math.round((matchedKeywordsCount / totalKeywords) * 100);
       const resumeQualityScore = Math.min(100, Math.round((verbCount * 6) + (metricsCount * 15)));
-      const overallScore = Math.max(10, Math.min(100, Math.round((formattingScore * 0.3) + (keywordMatchScore * 0.5) + (resumeQualityScore * 0.2))));
+      const overallScore = keywordMatchScore;
 
       resultObj = {
         overallScore,
@@ -448,4 +486,36 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
     console.error('[ATS Controller] Error running custom ATS evaluation:', error);
     return res.status(500).json({ error: 'Custom ATS analysis failed.', message: error.message });
   }
+};
+
+const classifyDomain = (text: string): string => {
+  const clean = text.toLowerCase();
+  
+  const categories = {
+    technical: ['developer', 'software engineer', 'programmer', 'coding', 'frontend', 'backend', 'fullstack', 'devops', 'kubernetes', 'docker', 'aws', 'git', 'github', 'database', 'sql', 'graphql', 'python', 'javascript', 'typescript', 'java', 'c++', 'html', 'css', 'data scientist', 'data engineer', 'analytics', 'systems analyst', 'technical'],
+    sales: ['sales', 'revenue', 'quota', 'account executive', 'business development', 'customer success', 'pipeline', 'cold call', 'lead generation', 'b2b', 'b2c', 'account manager', 'deal size', 'deals closed', 'salesforce', 'crm', 'annual contract value', 'acv', 'contract value', 'closed deals', 'prospecting', 'client acquisition'],
+    hr: ['hr', 'human resources', 'talent acquisition', 'recruiting', 'recruitment', 'payroll', 'hris', 'employee relations', 'talent management', 'sourcing', 'workforce planning', 'labor relations', 'onboarding'],
+    marketing: ['marketing', 'branding', 'seo', 'sem', 'copywriting', 'campaign', 'social media', 'growth hacking', 'analytics', 'conversion rate', 'cro', 'google ads', 'content creator', 'advertising'],
+    finance: ['finance', 'accounting', 'tax', 'auditor', 'auditing', 'budget', 'forecasting', 'banking', 'bookkeeping', 'ledger', 'quickbooks', 'financial modeling', 'treasury', 'accounts payable', 'accounts receivable'],
+    operations: ['operations', 'supply chain', 'logistics', 'procurement', 'inventory', 'vendor', 'shipping', 'warehouse', 'sap', 'six sigma', 'lean', 'operational efficiency'],
+    healthcare: ['clinical', 'medical', 'nursing', 'patient', 'healthcare', 'hospital', 'hipaa', 'ehr', 'emr', 'diagnostics', 'patient care', 'cpr', 'first aid', 'pharmacology'],
+    legal: ['legal', 'lawyer', 'law', 'compliance', 'regulatory', 'paralegal', 'litigation', 'contract drafting', 'attorney', 'due diligence', 'policy']
+  };
+
+  let bestCat = 'general';
+  let maxCount = 0;
+
+  for (const [cat, keywords] of Object.entries(categories)) {
+    const count = keywords.reduce((acc, kw) => {
+      const occurrences = clean.split(kw).length - 1;
+      return acc + occurrences;
+    }, 0);
+    
+    if (count > maxCount && count >= 2) {
+      maxCount = count;
+      bestCat = cat;
+    }
+  }
+
+  return bestCat;
 };

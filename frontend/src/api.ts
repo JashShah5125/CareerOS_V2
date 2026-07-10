@@ -225,6 +225,8 @@ export const settingsApi = {
 
 export interface AtsAnalysisResult {
   overallScore: number;
+  isDomainMismatch?: boolean;
+  domainMismatchMessage?: string;
   subScores: {
     formatting: number;
     keywordMatch: number;

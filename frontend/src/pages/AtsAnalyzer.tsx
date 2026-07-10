@@ -312,6 +312,27 @@ export default function AtsAnalyzer({
             </button>
           </div>
         </form>
+      ) : result.isDomainMismatch ? (
+        <Card style={{ padding: '3.5rem 2rem', textAlign: 'center', backgroundColor: 'var(--bg-card)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.25rem' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)' }}>
+              <AlertTriangle size={32} style={{ color: 'var(--danger)' }} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>Resume Not Applicable to this JD</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem', maxWidth: '520px', margin: '0.5rem auto 0', lineHeight: '1.4' }}>
+                {result.domainMismatchMessage}
+              </p>
+            </div>
+            <button
+              onClick={() => setResult(null)}
+              className="btn btn-primary"
+              style={{ height: '40px', padding: '0 2rem', marginTop: '0.5rem' }}
+            >
+              Run New ATS Evaluation
+            </button>
+          </div>
+        </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
