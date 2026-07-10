@@ -16,41 +16,7 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Both resumeText and jobDescription are required.' });
     }
 
-    const resumeDomain = classifyDomain(resumeText);
-    const jdDomain = classifyDomain(jobDescription);
-
-    if (resumeDomain !== 'general' && jdDomain !== 'general' && resumeDomain !== jdDomain) {
-      return res.json({
-        overallScore: 0,
-        isDomainMismatch: true,
-        domainMismatchMessage: `Resume main career domain (${resumeDomain.toUpperCase()}) does not match the target Job Description career domain (${jdDomain.toUpperCase()}).`,
-        subScores: { formatting: 0, keywordMatch: 0, experienceMatch: 0, projects: 0, education: 0, softSkills: 0 },
-        strengthMetrics: { atsParsing: 0, technicalSkills: 0, projects: 0, experience: 0, quantifiedResults: 0 },
-        keywordDensity: [],
-        scoreDeductions: [],
-        tailoredBulletPoints: [],
-        matchedKeywords: [],
-        missingKeywords: [],
-        redFlags: [`Domain mismatch: Resume is ${resumeDomain.toUpperCase()} but Job is ${jdDomain.toUpperCase()}`],
-        complianceChecklist: {
-          hasContactInfo: false,
-          isSingleColumn: false,
-          hasWorkHistory: false,
-          hasSkillsSection: false,
-          noGraphics: false,
-          hasSummarySection: false,
-          hasAddress: false,
-          friendlyHeadings: false,
-          standardDateFormats: false,
-          jobTitleMentioned: false,
-          quantifiedAchievements: false,
-          idealWordCount: false
-        },
-        improvementSuggestions: [`The resume domain (${resumeDomain.toUpperCase()}) does not match the job description domain (${jdDomain.toUpperCase()}). Please tailor your resume specifically for this career track.`],
-        candidateDetails: { candidateName: '', candidateEmail: '', candidatePhone: '' },
-        jobDetails: { company: '', role: '' }
-      });
-    }
+    // Initial validation passed. Domain mismatch checks are delegated to Groq semantic analysis.
 
     const systemPrompt = `
       You are an advanced ATS (Applicant Tracking System) parser and ranking algorithm.
@@ -82,11 +48,17 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       9. CANDIDATE & JOB METADATA EXTRACTION:
          - Precisely extract the candidate's full name, email, and phone number from the Resume Text.
          - Extract or guess the target company name and role/job title from the Job Description.
+      10. DOMAIN MISMATCH CHECK:
+          - Check if the main career domain of the candidate's Resume Text matches the target Job Description domain.
+          - If they are completely different, unrelated tracks (e.g. candidate is a Graphic Designer, HR Specialist, or Nurse, but the job is for a Software Developer, Sales Executive, or Accountant), set "isDomainMismatch" to true and write a clear, friendly explanation in "domainMismatchMessage" (e.g. "Resume main career domain (HR) does not match the target Job Description career domain (FINANCE)").
+          - If the domains are compatible, related, or overlap (e.g. Data Analyst applying for Software Engineer, or Fullstack Developer applying for Backend Developer, or marketing specialist applying for sales), set "isDomainMismatch" to false and "domainMismatchMessage" to an empty string.
 
       You must respond in strict JSON format. Output raw JSON matching this exact interface:
 
       interface AtsAnalysisResult {
         overallScore: number; // 0 to 100 calculated using the matched skills percentage
+        isDomainMismatch: boolean; // Set to true ONLY if domains are completely different/unrelated tracks
+        domainMismatchMessage: string; // Friendly warning message if mismatch is true, otherwise empty string
         subScores: {
           formatting: number; // 0 to 100 (30% weight)
           keywordMatch: number; // 0 to 100 (30% weight)
@@ -158,6 +130,11 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       );
       const cleaned = cleanJsonText(responseText);
       resultObj = JSON.parse(cleaned);
+
+      // Force score to 0 if Groq detects a domain mismatch
+      if (resultObj.isDomainMismatch) {
+        resultObj.overallScore = 0;
+      }
     } catch (apiError: any) {
       console.warn('[ATS Controller] Ollama custom analysis failed. Falling back to dynamic Javascript matching:', apiError);
       
@@ -488,87 +465,4 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
   }
 };
 
-const classifyDomain = (text: string): string => {
-  const clean = text.toLowerCase();
-  
-  const categories = {
-    technical: [
-      'developer', 'software engineer', 'programmer', 'coding', 'frontend', 'backend', 'fullstack', 
-      'devops', 'kubernetes', 'docker', 'aws', 'git', 'github', 'database', 'graphql', 'javascript', 
-      'typescript', 'java', 'c++', 'html', 'css', 'systems analyst', 'technical', 'web development', 
-      'system design', 'microservices', 'app developer', 'cloud architect', 'ci/cd', 'jenkins', 'git branch',
-      'version control', 'api integration', 'testing', 'codebase', 'programming'
-    ],
-    data_analytics: [
-      'data analyst', 'data analytics', 'power bi', 'tableau', 'excel', 'pandas', 'numpy', 'scikit-learn', 
-      'statistics', 'data scientist', 'data engineer', 'dashboard', 'data cleaning', 'analytics', 'analyst', 
-      'data warehousing', 'looker', 'metabase', 'sql', 'python', 'business intelligence', 'bi analyst', 
-      'charts', 'graphs', 'reporting', 'data visualization', 'sql queries', 'database administrator'
-    ],
-    sales: [
-      'sales', 'revenue', 'quota', 'account executive', 'business development', 'customer success', 
-      'pipeline', 'cold call', 'lead generation', 'b2b', 'b2c', 'account manager', 'deal size', 
-      'deals closed', 'salesforce', 'crm', 'annual contract value', 'acv', 'contract value', 'closed deals', 
-      'prospecting', 'client acquisition', 'selling', 'merchant', 'sales representative', 'retail', 'selling experience'
-    ],
-    hr: [
-      'hr', 'human resources', 'talent acquisition', 'recruiting', 'recruitment', 'payroll', 'hris', 
-      'employee relations', 'talent management', 'sourcing', 'workforce planning', 'labor relations', 
-      'onboarding', 'interviews', 'job portal', 'hiring manager', 'job description', 'background verification',
-      'joining formalities'
-    ],
-    marketing: [
-      'marketing', 'branding', 'seo', 'sem', 'copywriting', 'campaign', 'social media', 'growth hacking', 
-      'conversion rate', 'cro', 'google ads', 'content creator', 'advertising', 'brand strategy', 'social media marketing',
-      'email marketing', 'copywriter', 'content marketing', 'ad campaigns'
-    ],
-    finance: [
-      'finance', 'accounting', 'tax', 'auditor', 'auditing', 'budget', 'forecasting', 'banking', 
-      'bookkeeping', 'ledger', 'quickbooks', 'financial modeling', 'treasury', 'accounts payable', 'accounts receivable',
-      'cpa', 'ca', 'balance sheet', 'profit and loss', 'general ledger', 'taxation'
-    ],
-    operations: [
-      'operations', 'supply chain', 'logistics', 'procurement', 'inventory', 'vendor', 'shipping', 
-      'warehouse', 'sap', 'six sigma', 'lean', 'operational efficiency', 'logistics coordinator', 'order fulfillment',
-      'vendor management', 'purchasing coordinator'
-    ],
-    healthcare: [
-      'clinical', 'medical', 'nursing', 'patient', 'healthcare', 'hospital', 'hipaa', 'ehr', 'emr', 
-      'diagnostics', 'patient care', 'cpr', 'first aid', 'pharmacology', 'doctor', 'nurse', 'physician',
-      'medical assistant', 'patient charting', 'triage'
-    ],
-    legal: [
-      'legal', 'lawyer', 'law', 'compliance', 'regulatory', 'paralegal', 'litigation', 'contract drafting', 
-      'attorney', 'due diligence', 'policy', 'agreements', 'briefs', 'law firm', 'legal research'
-    ]
-  };
-
-  let bestCat = 'general';
-  let maxCount = 0;
-
-  for (const [cat, keywords] of Object.entries(categories)) {
-    const count = keywords.reduce((acc, kw) => {
-      // Escape special regex characters safely
-      const escapedKw = kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      
-      let regex;
-      // Use word boundaries only for purely alphanumeric keywords to avoid breaking tags like C++ or .NET
-      if (escapedKw.match(/^[a-zA-Z0-9_]+$/)) {
-        regex = new RegExp(`\\b${escapedKw}\\b`, 'gi');
-      } else {
-        regex = new RegExp(escapedKw, 'gi');
-      }
-
-      const occurrences = (clean.match(regex) || []).length;
-      return acc + occurrences;
-    }, 0);
-    
-    if (count > maxCount && count >= 1) {
-      maxCount = count;
-      bestCat = cat;
-    }
-  }
-
-  console.log(`[Domain Classifier] Categorized text with maxCount ${maxCount} as: ${bestCat}`);
-  return bestCat;
-};
+// Classification checking is fully managed contextually by the LLM (Groq)
