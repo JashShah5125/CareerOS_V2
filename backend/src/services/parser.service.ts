@@ -111,16 +111,18 @@ export async function extractTextFromBuffer(buffer: Buffer, mimeType: string): P
 
   try {
     if (normalizedMime.includes('pdf')) {
+      // Convert buffer to a vanilla Uint8Array to prevent Vercel/AWS Lambda buffer prototype pollution
+      const cleanUint8 = new Uint8Array(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
       try {
         const options = {
           pagerender: renderPageColumns
         };
-        const data = await pdf(buffer, options);
+        const data = await pdf(cleanUint8 as any, options);
         return sanitizeParsedText(data.text || '');
       } catch (pdfError: any) {
         console.warn('[Parser Service] Primary custom render pdf-parse failed, falling back to standard pdf-parse:', pdfError.message);
         try {
-          const standardData = await pdf(buffer);
+          const standardData = await pdf(cleanUint8 as any);
           return sanitizeParsedText(standardData.text || '');
         } catch (stdPdfError: any) {
           console.error('[Parser Service] Standard pdf-parse also failed:', stdPdfError.message);
