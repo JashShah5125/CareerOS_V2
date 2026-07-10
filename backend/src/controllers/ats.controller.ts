@@ -492,15 +492,55 @@ const classifyDomain = (text: string): string => {
   const clean = text.toLowerCase();
   
   const categories = {
-    technical: ['developer', 'software engineer', 'programmer', 'coding', 'frontend', 'backend', 'fullstack', 'devops', 'kubernetes', 'docker', 'aws', 'git', 'github', 'database', 'graphql', 'javascript', 'typescript', 'java', 'c++', 'html', 'css', 'systems analyst', 'technical', 'web development', 'system design', 'microservices'],
-    data_analytics: ['data analyst', 'data analytics', 'power bi', 'tableau', 'excel', 'pandas', 'numpy', 'scikit-learn', 'statistics', 'data scientist', 'data engineer', 'dashboard', 'data cleaning', 'analytics', 'analyst', 'data warehousing', 'looker', 'metabase', 'sql', 'python'],
-    sales: ['sales', 'revenue', 'quota', 'account executive', 'business development', 'customer success', 'pipeline', 'cold call', 'lead generation', 'b2b', 'b2c', 'account manager', 'deal size', 'deals closed', 'salesforce', 'crm', 'annual contract value', 'acv', 'contract value', 'closed deals', 'prospecting', 'client acquisition', 'selling', 'merchant'],
-    hr: ['hr', 'human resources', 'talent acquisition', 'recruiting', 'recruitment', 'payroll', 'hris', 'employee relations', 'talent management', 'sourcing', 'workforce planning', 'labor relations', 'onboarding'],
-    marketing: ['marketing', 'branding', 'seo', 'sem', 'copywriting', 'campaign', 'social media', 'growth hacking', 'analytics', 'conversion rate', 'cro', 'google ads', 'content creator', 'advertising'],
-    finance: ['finance', 'accounting', 'tax', 'auditor', 'auditing', 'budget', 'forecasting', 'banking', 'bookkeeping', 'ledger', 'quickbooks', 'financial modeling', 'treasury', 'accounts payable', 'accounts receivable'],
-    operations: ['operations', 'supply chain', 'logistics', 'procurement', 'inventory', 'vendor', 'shipping', 'warehouse', 'sap', 'six sigma', 'lean', 'operational efficiency'],
-    healthcare: ['clinical', 'medical', 'nursing', 'patient', 'healthcare', 'hospital', 'hipaa', 'ehr', 'emr', 'diagnostics', 'patient care', 'cpr', 'first aid', 'pharmacology'],
-    legal: ['legal', 'lawyer', 'law', 'compliance', 'regulatory', 'paralegal', 'litigation', 'contract drafting', 'attorney', 'due diligence', 'policy']
+    technical: [
+      'developer', 'software engineer', 'programmer', 'coding', 'frontend', 'backend', 'fullstack', 
+      'devops', 'kubernetes', 'docker', 'aws', 'git', 'github', 'database', 'graphql', 'javascript', 
+      'typescript', 'java', 'c++', 'html', 'css', 'systems analyst', 'technical', 'web development', 
+      'system design', 'microservices', 'app developer', 'cloud architect', 'ci/cd', 'jenkins', 'git branch',
+      'version control', 'api integration', 'testing', 'codebase', 'programming'
+    ],
+    data_analytics: [
+      'data analyst', 'data analytics', 'power bi', 'tableau', 'excel', 'pandas', 'numpy', 'scikit-learn', 
+      'statistics', 'data scientist', 'data engineer', 'dashboard', 'data cleaning', 'analytics', 'analyst', 
+      'data warehousing', 'looker', 'metabase', 'sql', 'python', 'business intelligence', 'bi analyst', 
+      'charts', 'graphs', 'reporting', 'data visualization', 'sql queries', 'database administrator'
+    ],
+    sales: [
+      'sales', 'revenue', 'quota', 'account executive', 'business development', 'customer success', 
+      'pipeline', 'cold call', 'lead generation', 'b2b', 'b2c', 'account manager', 'deal size', 
+      'deals closed', 'salesforce', 'crm', 'annual contract value', 'acv', 'contract value', 'closed deals', 
+      'prospecting', 'client acquisition', 'selling', 'merchant', 'sales representative', 'retail', 'selling experience'
+    ],
+    hr: [
+      'hr', 'human resources', 'talent acquisition', 'recruiting', 'recruitment', 'payroll', 'hris', 
+      'employee relations', 'talent management', 'sourcing', 'workforce planning', 'labor relations', 
+      'onboarding', 'interviews', 'job portal', 'hiring manager', 'job description', 'background verification',
+      'joining formalities'
+    ],
+    marketing: [
+      'marketing', 'branding', 'seo', 'sem', 'copywriting', 'campaign', 'social media', 'growth hacking', 
+      'conversion rate', 'cro', 'google ads', 'content creator', 'advertising', 'brand strategy', 'social media marketing',
+      'email marketing', 'copywriter', 'content marketing', 'ad campaigns'
+    ],
+    finance: [
+      'finance', 'accounting', 'tax', 'auditor', 'auditing', 'budget', 'forecasting', 'banking', 
+      'bookkeeping', 'ledger', 'quickbooks', 'financial modeling', 'treasury', 'accounts payable', 'accounts receivable',
+      'cpa', 'ca', 'balance sheet', 'profit and loss', 'general ledger', 'taxation'
+    ],
+    operations: [
+      'operations', 'supply chain', 'logistics', 'procurement', 'inventory', 'vendor', 'shipping', 
+      'warehouse', 'sap', 'six sigma', 'lean', 'operational efficiency', 'logistics coordinator', 'order fulfillment',
+      'vendor management', 'purchasing coordinator'
+    ],
+    healthcare: [
+      'clinical', 'medical', 'nursing', 'patient', 'healthcare', 'hospital', 'hipaa', 'ehr', 'emr', 
+      'diagnostics', 'patient care', 'cpr', 'first aid', 'pharmacology', 'doctor', 'nurse', 'physician',
+      'medical assistant', 'patient charting', 'triage'
+    ],
+    legal: [
+      'legal', 'lawyer', 'law', 'compliance', 'regulatory', 'paralegal', 'litigation', 'contract drafting', 
+      'attorney', 'due diligence', 'policy', 'agreements', 'briefs', 'law firm', 'legal research'
+    ]
   };
 
   let bestCat = 'general';
