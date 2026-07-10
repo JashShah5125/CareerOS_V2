@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+import io
+import pypdf
 
 from nlp_engine import (
     calculate_ats_match,
@@ -152,6 +154,21 @@ def evaluate_interview(req: InterviewEvaluateRequest):
         return evaluation
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/pdf/parse")
+async def parse_pdf(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        pdf_file = io.BytesIO(contents)
+        reader = pypdf.PdfReader(pdf_file)
+        text = ""
+        for page in reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+        return {"text": text.strip()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Python PDF Parse Error: {str(e)}")
 
 @app.get("/api/v1/status")
 def get_service_status():

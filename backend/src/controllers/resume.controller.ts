@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma';
-import pdf from 'pdf-parse';
 import { getUserIdFromRequest } from './auth.controller';
 import { queryOllama, cleanJsonText } from '../utils/ollama';
-import { sanitizeParsedText } from '../services/parser.service';
+import { sanitizeParsedText, extractTextFromBuffer } from '../services/parser.service';
 
 // Analyze formatting, skill, experience segments inside resume PDF/text
 export const analyzeResume = async (req: Request, res: Response) => {
@@ -14,19 +13,7 @@ export const analyzeResume = async (req: Request, res: Response) => {
 
     if (req.file) {
       fileName = req.file.originalname;
-      const buffer = req.file.buffer;
-
-      if (req.file.mimetype === 'application/pdf') {
-        try {
-          const parsedData = await pdf(buffer);
-          resumeText = sanitizeParsedText(parsedData.text || '');
-        } catch (parseError: any) {
-          console.error('[Resume Parser Error] Failed to parse raw PDF binary content:', parseError);
-          resumeText = sanitizeParsedText(buffer.toString('utf8'));
-        }
-      } else {
-        resumeText = sanitizeParsedText(buffer.toString('utf8'));
-      }
+      resumeText = await extractTextFromBuffer(req.file.buffer, req.file.mimetype);
     } else {
       resumeText = sanitizeParsedText(req.body.resumeText || '');
     }
