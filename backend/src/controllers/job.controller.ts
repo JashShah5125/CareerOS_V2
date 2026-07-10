@@ -99,6 +99,16 @@ ${resumeText || 'Not Provided'}
         }
       };
     }
+    // Enforce strict 0% match score in code if no skills matched and both experience/education are mismatches
+    const matchesCount = (resultObj.requiredSkills || []).length - (resultObj.missingSkills || []).length;
+    const isExpMismatch = resultObj.experienceMatch?.status?.toLowerCase().includes('match') === false || 
+                          resultObj.experienceMatch?.status?.toLowerCase().includes('mismatch') === true;
+    const isEduMismatch = resultObj.educationMatch?.status?.toLowerCase().includes('match') === false || 
+                          resultObj.educationMatch?.status?.toLowerCase().includes('mismatch') === true;
+
+    if (matchesCount <= 0 && isExpMismatch && isEduMismatch) {
+      resultObj.matchScore = 0;
+    }
 
     // Save to database
     try {
