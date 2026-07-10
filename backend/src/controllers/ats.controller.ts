@@ -492,8 +492,8 @@ const classifyDomain = (text: string): string => {
   const clean = text.toLowerCase();
   
   const categories = {
-    technical: ['developer', 'software engineer', 'programmer', 'coding', 'frontend', 'backend', 'fullstack', 'devops', 'kubernetes', 'docker', 'aws', 'git', 'github', 'database', 'sql', 'graphql', 'python', 'javascript', 'typescript', 'java', 'c++', 'html', 'css', 'data scientist', 'data engineer', 'analytics', 'systems analyst', 'technical'],
-    sales: ['sales', 'revenue', 'quota', 'account executive', 'business development', 'customer success', 'pipeline', 'cold call', 'lead generation', 'b2b', 'b2c', 'account manager', 'deal size', 'deals closed', 'salesforce', 'crm', 'annual contract value', 'acv', 'contract value', 'closed deals', 'prospecting', 'client acquisition'],
+    technical: ['developer', 'software engineer', 'programmer', 'coding', 'frontend', 'backend', 'fullstack', 'devops', 'kubernetes', 'docker', 'aws', 'git', 'github', 'database', 'sql', 'graphql', 'python', 'javascript', 'typescript', 'java', 'c++', 'html', 'css', 'data scientist', 'data engineer', 'analytics', 'analyst', 'data analyst', 'systems analyst', 'technical', 'power bi', 'tableau', 'excel', 'pandas', 'numpy', 'scikit-learn', 'statistics'],
+    sales: ['sales', 'revenue', 'quota', 'account executive', 'business development', 'customer success', 'pipeline', 'cold call', 'lead generation', 'b2b', 'b2c', 'account manager', 'deal size', 'deals closed', 'salesforce', 'crm', 'annual contract value', 'acv', 'contract value', 'closed deals', 'prospecting', 'client acquisition', 'selling', 'merchant'],
     hr: ['hr', 'human resources', 'talent acquisition', 'recruiting', 'recruitment', 'payroll', 'hris', 'employee relations', 'talent management', 'sourcing', 'workforce planning', 'labor relations', 'onboarding'],
     marketing: ['marketing', 'branding', 'seo', 'sem', 'copywriting', 'campaign', 'social media', 'growth hacking', 'analytics', 'conversion rate', 'cro', 'google ads', 'content creator', 'advertising'],
     finance: ['finance', 'accounting', 'tax', 'auditor', 'auditing', 'budget', 'forecasting', 'banking', 'bookkeeping', 'ledger', 'quickbooks', 'financial modeling', 'treasury', 'accounts payable', 'accounts receivable'],
@@ -511,11 +511,12 @@ const classifyDomain = (text: string): string => {
       return acc + occurrences;
     }, 0);
     
-    if (count > maxCount && count >= 2) {
+    if (count > maxCount && count >= 1) {
       maxCount = count;
       bestCat = cat;
     }
   }
 
+  console.log(`[Domain Classifier] Categorized text with maxCount ${maxCount} as: ${bestCat}`);
   return bestCat;
 };
