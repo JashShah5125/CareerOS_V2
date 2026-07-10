@@ -62,10 +62,6 @@ export default function JobMatcher({
       .finally(() => setLoading(false));
   };
 
-  const handleNavigateToTailor = () => {
-    navigate('/tailor');
-  };
-
   return (
     <div>
       <header style={{ marginBottom: '2rem' }}>
@@ -193,14 +189,9 @@ export default function JobMatcher({
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button onClick={() => setResult(null)} className="btn btn-secondary">
                 Scan Another Job
-              </button>
-
-              <button onClick={handleNavigateToTailor} className="btn btn-primary" style={{ gap: '0.375rem' }}>
-                <span>Tailor Resume</span>
-                <ArrowRight size={16} />
               </button>
             </div>
           </div>
