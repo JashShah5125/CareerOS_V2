@@ -11,7 +11,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Load all API endpoints
 app.use(routes);
