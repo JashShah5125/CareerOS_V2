@@ -95,10 +95,8 @@ export async function extractTextFromBuffer(buffer: Buffer, mimeType: string): P
         };
         const data = await pdf(buffer, options);
         return sanitizeParsedText(data.text || '');
-      } catch (pdfError) {
-        console.warn('[Parser Service] pdf-parse failed, falling back to string conversion:', pdfError);
-        const fallbackRaw = buffer.toString('ascii').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
-        return sanitizeParsedText(fallbackRaw);
+      } catch (pdfError: any) {
+        throw new Error(`PDFParseError: ${pdfError.message}\nStack: ${pdfError.stack}`);
       }
     } else if (
       normalizedMime.includes('word') || 
