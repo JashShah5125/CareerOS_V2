@@ -1,21 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { getUserIdFromRequest } from './auth.controller';
-
-const fetchWithRetry = async (url: string, init: RequestInit, retries = 3): Promise<globalThis.Response> => {
-  try {
-    const res = await fetch(url, init);
-    if (!res.ok) throw new Error(`Status ${res.status}`);
-    return res;
-  } catch (err) {
-    if (retries > 0) {
-      console.warn(`[NLP Service Fetch] Failed to connect to ${url}. Retrying in 1000ms... (Remaining retries: ${retries})`, err);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return fetchWithRetry(url, init, retries - 1);
-    }
-    throw err;
-  }
-};
+import { queryOllama, cleanJsonText } from '../utils/ollama';
 
 export const analyzeJob = async (req: Request, res: Response) => {
   try {
@@ -35,29 +21,58 @@ export const analyzeJob = async (req: Request, res: Response) => {
     const jobTitle = title || 'Target Role';
     const companyName = company || 'Target Company';
 
-    const nlpServiceUrl = process.env.NLP_SERVICE_URL || 'http://localhost:8000';
     let resultObj: any = null;
 
     try {
-      const response = await fetchWithRetry(`${nlpServiceUrl}/api/v1/job/match`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resumeText: resumeText || 'SUMMARY: Software Engineer experienced in development.',
-          jobDescription: jobDescription || 'Job description requirements.',
-          company: companyName,
-          role: jobTitle
-        })
-      });
+      const systemPrompt = `
+You are an expert technical recruiter AI. Your task is to compare a candidate's Resume Text against a target Job Description and output a detailed match analysis in strict JSON format.
 
-      if (!response.ok) {
-        throw new Error(`FastAPI Job Match returned status code ${response.status}`);
-      }
+Output raw JSON matching this exact structure:
+{
+  "matchScore": 85, // 0 to 100 overall score based on skills, experience, and education alignment
+  "requiredSkills": ["React", "TypeScript", "Node.js", "Docker"], // Major technical and soft skills extracted from the JD
+  "missingSkills": ["Docker"], // Skills required/preferred in the JD that are not evidenced in the candidate's resume
+  "experienceMatch": {
+    "status": "Match", // "Match" | "Partial Match" | "Mismatch"
+    "required": "Brief summary of what the JD asks for in terms of experience",
+    "detected": "Brief summary of what is detected in the candidate's history",
+    "feedback": "Friendly professional explanation of how the candidate's experience aligns"
+  },
+  "educationMatch": {
+    "status": "Match", // "Match" | "Partial Match" | "Mismatch"
+    "required": "Brief description of the education asked in the JD",
+    "detected": "Brief description of the education detected in the resume",
+    "feedback": "Friendly explanation of how their education matches"
+  },
+  "recommendationSummary": "Detailed, highly actionable summary recommending exactly how the candidate should tailor their resume, add missing keywords, or structure their projects to better fit the JD.",
+  "jobInsights": {
+    "salaryEstimate": "Guess/extract salary from JD if mentioned, otherwise leave as 'Not Specified'",
+    "roleLevel": "Junior | Mid-Level | Senior | Lead (inferred from JD)",
+    "companyInsight": "A brief, friendly insight about the company's stack, culture, or project requirements extracted from the JD"
+  }
+}
 
-      resultObj = await response.json();
+Do not include any markdown comments, explanation text, or backticks outside the JSON. Respond with strict, valid JSON only.
+`;
+
+      const userPrompt = `
+Job Title: ${jobTitle}
+Company: ${companyName}
+
+Target Job Description:
+${jobDescription || 'Not Provided'}
+
+Candidate Resume Text:
+${resumeText || 'Not Provided'}
+`;
+
+      console.log('[Job Controller] Querying LLM for job match analysis...');
+      const responseText = await queryOllama(systemPrompt, userPrompt);
+      const cleanJson = cleanJsonText(responseText);
+      resultObj = JSON.parse(cleanJson);
       resultObj.id = `job-match-${Date.now()}`;
     } catch (apiError: any) {
-      console.warn('[Job Controller] FastAPI matching failed, using mock job matching fallback:', apiError);
+      console.warn('[Job Controller] LLM matching failed, using mock job matching fallback:', apiError);
       
       resultObj = {
         id: `mock-job-analysis-${Date.now()}`,
