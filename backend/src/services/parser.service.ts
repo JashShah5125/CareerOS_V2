@@ -23,23 +23,33 @@ function renderPageColumns(pageData: any): Promise<string> {
     if (!items || items.length === 0) return '';
 
     const sortedItems = [...items].sort((a: any, b: any) => {
-      const yA = a.transform[5];
-      const yB = b.transform[5];
+      const yA = (a.transform && a.transform[5]) !== undefined ? a.transform[5] : 0;
+      const yB = (b.transform && b.transform[5]) !== undefined ? b.transform[5] : 0;
       if (Math.abs(yA - yB) > 5) {
         return yB - yA;
       }
-      return a.transform[4] - b.transform[4];
+      const xA = (a.transform && a.transform[4]) !== undefined ? a.transform[4] : 0;
+      const xB = (b.transform && b.transform[4]) !== undefined ? b.transform[4] : 0;
+      return xA - xB;
     });
 
-    const xCoordinates = items.map((it: any) => it.transform[4]);
+    const xCoordinates = items.map((it: any) => (it.transform && it.transform[4]) !== undefined ? it.transform[4] : 0);
     const minX = Math.min(...xCoordinates);
     const maxX = Math.max(...xCoordinates);
     const pageSplit = minX + (maxX - minX) / 2;
 
-    const leftCount = items.filter((it: any) => it.transform[4] < pageSplit - 30).length;
-    const rightCount = items.filter((it: any) => it.transform[4] > pageSplit + 30).length;
+    const leftCount = items.filter((it: any) => {
+      const x = (it.transform && it.transform[4]) !== undefined ? it.transform[4] : 0;
+      return x < pageSplit - 30;
+    }).length;
+    
+    const rightCount = items.filter((it: any) => {
+      const x = (it.transform && it.transform[4]) !== undefined ? it.transform[4] : 0;
+      return x > pageSplit + 30;
+    }).length;
+    
     const centerSpanCount = items.filter((it: any) => {
-      const x = it.transform[4];
+      const x = (it.transform && it.transform[4]) !== undefined ? it.transform[4] : 0;
       const w = it.width || 0;
       return x < pageSplit - 30 && (x + w) > pageSplit + 30;
     }).length;
@@ -47,21 +57,28 @@ function renderPageColumns(pageData: any): Promise<string> {
     const isTwoColumn = leftCount > 5 && rightCount > 5 && centerSpanCount < 3;
 
     if (isTwoColumn) {
-      const leftColItems = sortedItems.filter((it: any) => it.transform[4] < pageSplit);
-      const rightColItems = sortedItems.filter((it: any) => it.transform[4] >= pageSplit);
+      const leftColItems = sortedItems.filter((it: any) => {
+        const x = (it.transform && it.transform[4]) !== undefined ? it.transform[4] : 0;
+        return x < pageSplit;
+      });
+      const rightColItems = sortedItems.filter((it: any) => {
+        const x = (it.transform && it.transform[4]) !== undefined ? it.transform[4] : 0;
+        return x >= pageSplit;
+      });
 
       const renderCol = (colItems: any[]) => {
         let text = '';
         let lastY = null;
         for (const item of colItems) {
+          const currentY = item.transform ? item.transform[5] : 0;
           if (lastY === null) {
             text += item.str;
-          } else if (Math.abs(lastY - item.transform[5]) <= 5) {
+          } else if (Math.abs(lastY - currentY) <= 5) {
             text += ' ' + item.str;
           } else {
             text += '\n' + item.str;
           }
-          lastY = item.transform[5];
+          lastY = currentY;
         }
         return text;
       };
@@ -71,17 +88,21 @@ function renderPageColumns(pageData: any): Promise<string> {
       let text = '';
       let lastY = null;
       for (const item of sortedItems) {
+        const currentY = item.transform ? item.transform[5] : 0;
         if (lastY === null) {
           text += item.str;
-        } else if (Math.abs(lastY - item.transform[5]) <= 5) {
+        } else if (Math.abs(lastY - currentY) <= 5) {
           text += ' ' + item.str;
         } else {
           text += '\n' + item.str;
         }
-        lastY = item.transform[5];
+        lastY = currentY;
       }
       return text;
     }
+  }).catch((err: any) => {
+    console.warn('[Parser Service] Page rendering failed, returning empty buffer string:', err.message);
+    return '';
   });
 }
 
