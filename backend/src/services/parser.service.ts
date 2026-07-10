@@ -1,3 +1,4 @@
+/// <reference path="../types/pdf-parse-fork.d.ts" />
 import pdf from 'pdf-parse-fork';
 import mammoth from 'mammoth';
 
