@@ -492,7 +492,8 @@ const classifyDomain = (text: string): string => {
   const clean = text.toLowerCase();
   
   const categories = {
-    technical: ['developer', 'software engineer', 'programmer', 'coding', 'frontend', 'backend', 'fullstack', 'devops', 'kubernetes', 'docker', 'aws', 'git', 'github', 'database', 'sql', 'graphql', 'python', 'javascript', 'typescript', 'java', 'c++', 'html', 'css', 'data scientist', 'data engineer', 'analytics', 'analyst', 'data analyst', 'systems analyst', 'technical', 'power bi', 'tableau', 'excel', 'pandas', 'numpy', 'scikit-learn', 'statistics'],
+    technical: ['developer', 'software engineer', 'programmer', 'coding', 'frontend', 'backend', 'fullstack', 'devops', 'kubernetes', 'docker', 'aws', 'git', 'github', 'database', 'graphql', 'javascript', 'typescript', 'java', 'c++', 'html', 'css', 'systems analyst', 'technical', 'web development', 'system design', 'microservices'],
+    data_analytics: ['data analyst', 'data analytics', 'power bi', 'tableau', 'excel', 'pandas', 'numpy', 'scikit-learn', 'statistics', 'data scientist', 'data engineer', 'dashboard', 'data cleaning', 'analytics', 'analyst', 'data warehousing', 'looker', 'metabase', 'sql', 'python'],
     sales: ['sales', 'revenue', 'quota', 'account executive', 'business development', 'customer success', 'pipeline', 'cold call', 'lead generation', 'b2b', 'b2c', 'account manager', 'deal size', 'deals closed', 'salesforce', 'crm', 'annual contract value', 'acv', 'contract value', 'closed deals', 'prospecting', 'client acquisition', 'selling', 'merchant'],
     hr: ['hr', 'human resources', 'talent acquisition', 'recruiting', 'recruitment', 'payroll', 'hris', 'employee relations', 'talent management', 'sourcing', 'workforce planning', 'labor relations', 'onboarding'],
     marketing: ['marketing', 'branding', 'seo', 'sem', 'copywriting', 'campaign', 'social media', 'growth hacking', 'analytics', 'conversion rate', 'cro', 'google ads', 'content creator', 'advertising'],
