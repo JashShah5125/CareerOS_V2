@@ -6,7 +6,7 @@ export const cleanJsonText = (text: string): string => {
 
 export const queryOllama = async (systemPrompt: string, userPrompt: string): Promise<string> => {
   const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
-  const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.1:8b';
+  const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.2:3b';
 
   try {
     const response = await fetch(`${ollamaUrl}/api/chat`, {
