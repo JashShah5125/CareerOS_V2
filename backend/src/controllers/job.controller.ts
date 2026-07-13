@@ -114,57 +114,6 @@ ${resumeText || 'Not Provided'}
       resultObj.matchScore = 0;
     }
 
-    // Save/Deduplicate in database
-    try {
-      const extractedRole = resultObj?.jobDetails?.role || jobTitle;
-      const extractedCompany = resultObj?.jobDetails?.company || companyName;
-
-      const existingJob = await prisma.job.findFirst({
-        where: {
-          userId,
-          title: extractedRole,
-          company: extractedCompany
-        }
-      });
-
-      if (existingJob) {
-        // Update existing job board
-        const updated = await prisma.job.update({
-          where: { id: existingJob.id },
-          data: {
-            description: jobDescription || 'Updated description',
-            matchScore: resultObj.matchScore,
-            reqSkills: resultObj.requiredSkills || [],
-            missingSkills: resultObj.missingSkills || [],
-            expMatch: resultObj.experienceMatch?.feedback || '',
-            eduMatch: resultObj.educationMatch?.feedback || '',
-            recommendationSummary: resultObj.recommendationSummary || ''
-          }
-        });
-        resultObj.id = updated.id;
-        console.log(`[Job Controller] Updated existing job board: ${extractedCompany} - ${extractedRole} (${updated.id})`);
-      } else {
-        // Create new job board
-        const created = await prisma.job.create({
-          data: {
-            userId,
-            title: extractedRole,
-            company: extractedCompany,
-            description: jobDescription || 'Mock description',
-            matchScore: resultObj.matchScore,
-            reqSkills: resultObj.requiredSkills || [],
-            missingSkills: resultObj.missingSkills || [],
-            expMatch: resultObj.experienceMatch?.feedback || '',
-            eduMatch: resultObj.educationMatch?.feedback || '',
-            recommendationSummary: resultObj.recommendationSummary || ''
-          }
-        });
-        resultObj.id = created.id;
-        console.log(`[Job Controller] Created new job board: ${extractedCompany} - ${extractedRole} (${created.id})`);
-      }
-    } catch (dbErr) {
-      console.warn('[Job Controller] Failed to save job in database:', dbErr);
-    }
 
     return res.json(resultObj);
   } catch (error: any) {
