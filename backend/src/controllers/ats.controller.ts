@@ -52,10 +52,10 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
          - Precisely extract the candidate's full name, email, and phone number from the Resume Text.
          - Extract or guess the target company name and role/job title from the Job Description.
       10. DOMAIN MISMATCH CHECK (CRITICAL & STRICT):
-          - Evaluate if the candidate's core functional role track (e.g., HR/Recruitment, Nursing, Accountant, Graphic Design) is fundamentally different from the target Job Description's functional role track (e.g., Software Engineering, Sales Executive, Medical Doctor).
-          - BE EXTREMELY STRICT: If a candidate's primary experience is in Human Resources (HR), Talent Acquisition, or Recruiting, and the Job Description is for a Software Developer or Engineer, this is a 100% domain mismatch. Do NOT excuse this mismatch just because the HR resume contains tech buzzwords or mentions recruiting software engineers.
-          - If they are mismatched functional tracks, set "isDomainMismatch" to true and write a clear, friendly explanation in "domainMismatchMessage" detailing the mismatch (e.g., "Resume main career domain (Human Resources) does not match the target Job Description career domain (Software Engineering)").
-          - Only set "isDomainMismatch" to false if the domains have direct functional overlap (e.g., Frontend Developer to Fullstack Developer, or Data Analyst to Data Scientist).
+          - Evaluate if the candidate's core functional track (e.g., HR/Recruitment, Nursing, Accountant, Graphic Design, Sales, Software Engineering) is fundamentally different and unrelated to the target Job Description's functional track.
+          - DO NOT flag as mismatch if the candidate's track and target track are in the same general department or business area (e.g., "Sales and Operations" and "Sales Executive" are both Sales tracks and should NOT be mismatched. Likewise, "Frontend Developer" and "Fullstack Developer" or "Data Analyst" and "Software Engineer" are compatible and should NOT be mismatched).
+          - BE EXTREMELY STRICT ONLY on completely unrelated fields: e.g. candidate is a Nurse or HR Recruiter, but the job is for a Software Engineer, Sales Executive, or Accountant.
+          - If they are completely different tracks, set "isDomainMismatch" to true. If they are related, overlapping, or compatible tracks, set "isDomainMismatch" to false.
 
       You must respond in strict JSON format. Output raw JSON matching this exact interface:
 
