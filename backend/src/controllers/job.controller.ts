@@ -45,6 +45,10 @@ Output raw JSON matching this exact structure:
     "feedback": "Friendly explanation of how their education matches"
   },
   "recommendationSummary": "Detailed, highly actionable summary recommending exactly how the candidate should tailor their resume, add missing keywords, or structure their projects to better fit the JD.",
+  "jobDetails": {
+    "company": "Google", // Company name extracted/inferred from the Job Description. Be precise, default to 'Target Company' if not found.
+    "role": "Backend PHP Developer" // Role title extracted/inferred from the Job Description. Be precise, default to 'Target Role' if not found.
+  },
   "jobInsights": {
     "salaryEstimate": "Guess/extract salary from JD if mentioned, otherwise leave as 'Not Specified'",
     "roleLevel": "Junior | Mid-Level | Senior | Lead (inferred from JD)",
@@ -110,22 +114,54 @@ ${resumeText || 'Not Provided'}
       resultObj.matchScore = 0;
     }
 
-    // Save to database
+    // Save/Deduplicate in database
     try {
-      await prisma.job.create({
-        data: {
+      const extractedRole = resultObj?.jobDetails?.role || jobTitle;
+      const extractedCompany = resultObj?.jobDetails?.company || companyName;
+
+      const existingJob = await prisma.job.findFirst({
+        where: {
           userId,
-          title: jobTitle,
-          company: companyName,
-          description: jobDescription || 'Mock description',
-          matchScore: resultObj.matchScore,
-          reqSkills: resultObj.requiredSkills || [],
-          missingSkills: resultObj.missingSkills || [],
-          expMatch: resultObj.experienceMatch?.feedback || '',
-          eduMatch: resultObj.educationMatch?.feedback || '',
-          recommendationSummary: resultObj.recommendationSummary || ''
+          title: extractedRole,
+          company: extractedCompany
         }
       });
+
+      if (existingJob) {
+        // Update existing job board
+        const updated = await prisma.job.update({
+          where: { id: existingJob.id },
+          data: {
+            description: jobDescription || 'Updated description',
+            matchScore: resultObj.matchScore,
+            reqSkills: resultObj.requiredSkills || [],
+            missingSkills: resultObj.missingSkills || [],
+            expMatch: resultObj.experienceMatch?.feedback || '',
+            eduMatch: resultObj.educationMatch?.feedback || '',
+            recommendationSummary: resultObj.recommendationSummary || ''
+          }
+        });
+        resultObj.id = updated.id;
+        console.log(`[Job Controller] Updated existing job board: ${extractedCompany} - ${extractedRole} (${updated.id})`);
+      } else {
+        // Create new job board
+        const created = await prisma.job.create({
+          data: {
+            userId,
+            title: extractedRole,
+            company: extractedCompany,
+            description: jobDescription || 'Mock description',
+            matchScore: resultObj.matchScore,
+            reqSkills: resultObj.requiredSkills || [],
+            missingSkills: resultObj.missingSkills || [],
+            expMatch: resultObj.experienceMatch?.feedback || '',
+            eduMatch: resultObj.educationMatch?.feedback || '',
+            recommendationSummary: resultObj.recommendationSummary || ''
+          }
+        });
+        resultObj.id = created.id;
+        console.log(`[Job Controller] Created new job board: ${extractedCompany} - ${extractedRole} (${created.id})`);
+      }
     } catch (dbErr) {
       console.warn('[Job Controller] Failed to save job in database:', dbErr);
     }
