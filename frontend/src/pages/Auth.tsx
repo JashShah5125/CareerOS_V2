@@ -91,6 +91,13 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
         })
         .finally(() => setLoading(false));
     } else if (view === 'register') {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/\-]).{8,}$/;
+      if (!passwordRegex.test(password)) {
+        setError('Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+        setLoading(false);
+        return;
+      }
+
       authApi.register({ email, password, firstName, lastName })
         .then(res => {
           onLoginSuccess(res.user, res.token);
