@@ -54,8 +54,8 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       10. DOMAIN MISMATCH CHECK (CRITICAL & STRICT):
           - Compare ONLY the candidate's core functional job role (e.g., Sales/Selling, Software Engineering/Coding, HR/Recruitment, Nursing/Medical) against the target JD's core functional job role.
           - IGNORE the industry sector of the job (e.g., "IT Services", "Healthcare", "Retail"). For example, "Field Sales Executive - IT Services" has a core job role of Sales. "Sales and Operations" also has a core job role of Sales. Since they are both Sales roles, they are compatible and this is NOT a mismatch.
-          - DO NOT flag as mismatch if the candidate's track and target track are in the same general business department. Only flag if they are completely unrelated functional roles (e.g., candidate is a Nurse or HR recruiter, but the job is for a Software Engineer, Sales Executive, or Accountant).
-          - If they are completely different functional tracks, set "isDomainMismatch" to true. If they are related or compatible, set "isDomainMismatch" to false.
+          - BE EXTREMELY STRICT: If a candidate's primary experience is in Software Engineering, Coding, or IT (e.g., "PHP Developer", "Fullstack Engineer"), and the Job Description is for a "Sales Executive" or "HR Specialist", this is a 100% domain mismatch. They are completely unrelated functional tracks (coding vs. selling or recruiting). Set "isDomainMismatch" to true and write a clear, friendly explanation in "domainMismatchMessage".
+          - If they are related or compatible (e.g. Frontend to Fullstack, or Sales and Operations to Sales Executive), set "isDomainMismatch" to false.
 
       You must respond in strict JSON format. Output raw JSON matching this exact interface:
 
