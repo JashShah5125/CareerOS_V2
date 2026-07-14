@@ -42,43 +42,34 @@ const normalizeDepartment = (track: string): string => {
 const classifyTextByKeywords = (text: string, defaultCategory: string): string => {
   const t = text.toLowerCase();
   
-  // Sales / Business Development keywords
-  if (
-    t.includes('sales') || 
-    t.includes('selling') || 
-    t.includes('business development') || 
-    t.includes('account executive') || 
-    t.includes('account manager') || 
-    t.includes('cold calling') || 
-    t.includes('sales executive')
-  ) {
-    return 'Sales/Business Development';
-  }
-  
-  // Tech / Software keywords
-  if (
-    t.includes('developer') || 
-    t.includes('engineer') || 
-    t.includes('programmer') || 
-    t.includes('coding') || 
-    t.includes('software engineer') || 
-    t.includes('fullstack') || 
-    t.includes('frontend') || 
-    t.includes('backend')
-  ) {
-    return 'Software Engineering/Tech';
-  }
-  
-  // HR / Recruiting keywords
-  if (
-    t.includes('recruiter') || 
-    t.includes('recruitment') || 
-    t.includes('talent acquisition') || 
-    t.includes('human resources') || 
-    t.includes(' hr ') || 
-    t.includes(' hris ')
-  ) {
-    return 'HR/Recruitment';
+  const techKeywords = ['developer', 'engineer', 'programmer', 'coding', 'software', 'fullstack', 'frontend', 'backend', 'php', 'laravel', 'javascript', 'typescript', 'python', 'java', 'react', 'node', 'mysql', 'postgresql', 'tech stack', 'web dev', 'git'];
+  const salesKeywords = ['sales', 'selling', 'business development', 'bd', 'account executive', 'account manager', 'cold calling', 'sales executive', 'sales representative', 'lead generation', 'pipeline management', 'saas sales', 'deal closing', 'b2b sales'];
+  const hrKeywords = ['recruiter', 'recruitment', 'recruiting', 'talent acquisition', 'human resources', ' hr ', ' payroll ', 'hris', 'employee relations'];
+
+  let techScore = 0;
+  let salesScore = 0;
+  let hrScore = 0;
+
+  techKeywords.forEach(kw => {
+    const matches = t.split(kw).length - 1;
+    techScore += matches;
+  });
+
+  salesKeywords.forEach(kw => {
+    const matches = t.split(kw).length - 1;
+    salesScore += matches;
+  });
+
+  hrKeywords.forEach(kw => {
+    const matches = t.split(kw).length - 1;
+    hrScore += matches;
+  });
+
+  const maxScore = Math.max(techScore, salesScore, hrScore);
+  if (maxScore >= 2) {
+    if (maxScore === techScore) return 'Software Engineering/Tech';
+    if (maxScore === salesScore) return 'Sales/Business Development';
+    if (maxScore === hrScore) return 'HR/Recruitment';
   }
   
   return defaultCategory;
