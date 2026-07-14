@@ -52,10 +52,16 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
          - Precisely extract the candidate's full name, email, and phone number from the Resume Text.
          - Extract or guess the target company name and role/job title from the Job Description.
       10. DOMAIN MISMATCH CHECK (CRITICAL & STRICT):
-          - Compare ONLY the candidate's core functional job role (e.g., Sales/Selling, Software Engineering/Coding, HR/Recruitment, Nursing/Medical) against the target JD's core functional job role.
-          - IGNORE the industry sector of the job (e.g., "IT Services", "Healthcare", "Retail"). For example, "Field Sales Executive - IT Services" has a core job role of Sales. "Sales and Operations" also has a core job role of Sales. Since they are both Sales roles, they are compatible and this is NOT a mismatch.
-          - BE EXTREMELY STRICT: If a candidate's primary experience is in Software Engineering, Coding, or IT (e.g., "PHP Developer", "Fullstack Engineer"), and the Job Description is for a "Sales Executive" or "HR Specialist", this is a 100% domain mismatch. They are completely unrelated functional tracks (coding vs. selling or recruiting). Set "isDomainMismatch" to true and write a clear, friendly explanation in "domainMismatchMessage".
-          - If they are related or compatible (e.g. Frontend to Fullstack, or Sales and Operations to Sales Executive), set "isDomainMismatch" to false.
+          - Categorize both the candidate's primary background and the target Job Description into their core functional tracks/departments (e.g., Software Engineering/Tech, Sales/Business Development, HR/Recruitment, Medical/Healthcare, Accounting/Finance, Graphic Design/Creative, Legal, Marketing, Education/Teaching).
+          - BE EXTREMELY STRICT: If the candidate's core functional track/department is different from the target job's functional track/department, this is a 100% domain mismatch. Set "isDomainMismatch" to true and write a clear, friendly explanation in "domainMismatchMessage".
+          - Examples of domain mismatch (Set "isDomainMismatch" to true):
+            * Tech (e.g., PHP Developer, Fullstack, DevOps) vs. Sales (e.g., Sales Executive, Account Manager)
+            * HR (e.g., Recruiter, HR Specialist) vs. Tech (e.g., Software Engineer)
+            * Healthcare (e.g., Nurse, Doctor) vs. Finance (e.g., Accountant, Bookkeeper)
+            * Accounting (e.g., Tax Auditor) vs. Tech (e.g., SysAdmin)
+            * Legal (e.g., Lawyer, paralegal) vs. Creative (e.g., Graphic Designer, illustrator)
+          - DO NOT excuse this mismatch just because the candidate's resume contains tools or keywords from the target track (e.g., an HR recruiter listing they "hire software developers" is still classified as HR, NOT Tech).
+          - Only set "isDomainMismatch" to false if both tracks belong to the same general department/functional area (e.g., Frontend and Fullstack are both Tech; Sales Representative and Sales Executive are both Sales; Accountant and Auditor are both Finance).
 
       You must respond in strict JSON format. Output raw JSON matching this exact interface:
 
