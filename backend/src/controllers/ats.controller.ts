@@ -42,13 +42,21 @@ const normalizeDepartment = (track: string): string => {
 const classifyTextByKeywords = (text: string, defaultCategory: string): string => {
   const t = text.toLowerCase();
   
-  const techKeywords = ['developer', 'engineer', 'programmer', 'coding', 'software', 'fullstack', 'frontend', 'backend', 'php', 'laravel', 'javascript', 'typescript', 'python', 'java', 'react', 'node', 'mysql', 'postgresql', 'tech stack', 'web dev', 'git'];
-  const salesKeywords = ['sales', 'selling', 'business development', 'bd', 'account executive', 'account manager', 'cold calling', 'sales executive', 'sales representative', 'lead generation', 'pipeline management', 'saas sales', 'deal closing', 'b2b sales'];
+  const techKeywords = ['developer', 'engineer', 'programmer', 'coding', 'software', 'fullstack', 'frontend', 'backend', 'php', 'laravel', 'javascript', 'typescript', 'python', 'java', 'react', 'node', 'mysql', 'postgresql', 'tech stack', 'web dev', 'git', 'data analyst', 'data scientist', 'tableau', 'power bi', 'sql', 'excel', 'statistics', 'pandas', 'analytics', 'data analysis', 'data science', 'machine learning', 'ai'];
+  const salesKeywords = ['sales', 'selling', 'business development', 'bd', 'account executive', 'account manager', 'cold calling', 'sales executive', 'sales representative', 'lead generation', 'pipeline management', 'saas sales', 'deal closing', 'b2b sales', 'sales head', 'sales manager'];
   const hrKeywords = ['recruiter', 'recruitment', 'recruiting', 'talent acquisition', 'human resources', ' hr ', ' payroll ', 'hris', 'employee relations'];
+  const financeKeywords = ['accounting', 'accountant', 'finance', 'bookkeeper', 'auditor', 'taxation', 'financial analyst', 'ledger', 'balance sheet', 'p&l'];
+  const designKeywords = ['graphic design', 'illustrator', 'photoshop', 'figma', 'ui/ux', 'canvas', 'creative director', 'artwork'];
+  const marketingKeywords = ['marketing', 'seo', 'sem', 'social media', 'advertising', 'branding', 'campaign', 'copywriter', 'content writing'];
+  const legalKeywords = ['legal', 'lawyer', 'paralegal', 'compliance', 'contract drafting', 'litigation', 'attorney'];
 
   let techScore = 0;
   let salesScore = 0;
   let hrScore = 0;
+  let financeScore = 0;
+  let designScore = 0;
+  let marketingScore = 0;
+  let legalScore = 0;
 
   techKeywords.forEach(kw => {
     const matches = t.split(kw).length - 1;
@@ -65,11 +73,35 @@ const classifyTextByKeywords = (text: string, defaultCategory: string): string =
     hrScore += matches;
   });
 
-  const maxScore = Math.max(techScore, salesScore, hrScore);
+  financeKeywords.forEach(kw => {
+    const matches = t.split(kw).length - 1;
+    financeScore += matches;
+  });
+
+  designKeywords.forEach(kw => {
+    const matches = t.split(kw).length - 1;
+    designScore += matches;
+  });
+
+  marketingKeywords.forEach(kw => {
+    const matches = t.split(kw).length - 1;
+    marketingScore += matches;
+  });
+
+  legalKeywords.forEach(kw => {
+    const matches = t.split(kw).length - 1;
+    legalScore += matches;
+  });
+
+  const maxScore = Math.max(techScore, salesScore, hrScore, financeScore, designScore, marketingScore, legalScore);
   if (maxScore >= 2) {
     if (maxScore === techScore) return 'Software Engineering/Tech';
     if (maxScore === salesScore) return 'Sales/Business Development';
     if (maxScore === hrScore) return 'HR/Recruitment';
+    if (maxScore === financeScore) return 'Accounting/Finance';
+    if (maxScore === designScore) return 'Graphic Design/Creative';
+    if (maxScore === marketingScore) return 'Marketing';
+    if (maxScore === legalScore) return 'Legal';
   }
   
   return defaultCategory;
