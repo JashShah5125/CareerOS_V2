@@ -6,7 +6,7 @@ import { extractTextFromBuffer } from '../services/parser.service';
 
 const normalizeDepartment = (track: string): string => {
   const t = track.toLowerCase();
-  if (t.includes('sales') || t.includes('selling') || t.includes('business development') || t.includes('bd') || t.includes('account manager') || t.includes('revenue')) {
+  if (t.includes('sales') || t.includes('selling') || t.includes('business development') || t.includes('bd') || t.includes('account manager') || t.includes('revenue') || t.includes('sales executive')) {
     return 'sales';
   }
   if (t.includes('software') || t.includes('developer') || t.includes('engineer') || t.includes('coding') || t.includes('tech') || t.includes('it') || t.includes('programmer') || t.includes('sysadmin') || t.includes('devops')) {
@@ -37,6 +37,51 @@ const normalizeDepartment = (track: string): string => {
     return 'operations';
   }
   return t;
+};
+
+const classifyTextByKeywords = (text: string, defaultCategory: string): string => {
+  const t = text.toLowerCase();
+  
+  // Sales / Business Development keywords
+  if (
+    t.includes('sales') || 
+    t.includes('selling') || 
+    t.includes('business development') || 
+    t.includes('account executive') || 
+    t.includes('account manager') || 
+    t.includes('cold calling') || 
+    t.includes('sales executive')
+  ) {
+    return 'Sales/Business Development';
+  }
+  
+  // Tech / Software keywords
+  if (
+    t.includes('developer') || 
+    t.includes('engineer') || 
+    t.includes('programmer') || 
+    t.includes('coding') || 
+    t.includes('software engineer') || 
+    t.includes('fullstack') || 
+    t.includes('frontend') || 
+    t.includes('backend')
+  ) {
+    return 'Software Engineering/Tech';
+  }
+  
+  // HR / Recruiting keywords
+  if (
+    t.includes('recruiter') || 
+    t.includes('recruitment') || 
+    t.includes('talent acquisition') || 
+    t.includes('human resources') || 
+    t.includes(' hr ') || 
+    t.includes(' hris ')
+  ) {
+    return 'HR/Recruitment';
+  }
+  
+  return defaultCategory;
 };
 
 export const analyzeAtsCustom = async (req: Request, res: Response) => {
@@ -182,8 +227,12 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       resultObj = JSON.parse(cleaned);
 
       // Programmatic override to prevent LLM logic hallucinations
-      const candidateTrack = (resultObj.candidateTrack || '').trim();
-      const jobTrack = (resultObj.jobTrack || '').trim();
+      let candidateTrack = (resultObj.candidateTrack || '').trim();
+      let jobTrack = (resultObj.jobTrack || '').trim();
+
+      // Run keyword classifier override to resolve LLM confusion on short/complex titles
+      candidateTrack = classifyTextByKeywords(resumeText, candidateTrack);
+      jobTrack = classifyTextByKeywords(jobDescription, jobTrack);
 
       if (candidateTrack && jobTrack) {
         const normalizedCandidate = normalizeDepartment(candidateTrack);
