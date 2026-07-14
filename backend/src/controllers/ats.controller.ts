@@ -250,11 +250,10 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       resultObj = JSON.parse(cleaned);
 
       // Programmatic override to prevent LLM logic hallucinations
-      let candidateTrack = (resultObj.candidateTrack || '').trim();
+      const candidateTrack = (resultObj.candidateTrack || '').trim();
       let jobTrack = (resultObj.jobTrack || '').trim();
 
-      // Run keyword classifier override to resolve LLM confusion on short/complex titles
-      candidateTrack = classifyTextByKeywords(resumeText, candidateTrack);
+      // Only run keyword classifier override on the Job Description to resolve short-title confusion
       jobTrack = classifyTextByKeywords(jobDescription, jobTrack);
 
       if (candidateTrack && jobTrack) {
