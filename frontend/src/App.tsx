@@ -19,6 +19,7 @@ export default function App() {
 
   const [matcherResumeText, setMatcherResumeText] = useState('');
   const [atsResumeText, setAtsResumeText] = useState('');
+  const [atsFile, setAtsFile] = useState<File | null>(null);
   const [atsJobDescription, setAtsJobDescription] = useState('');
   const [atsResult, setAtsResult] = useState<any>(null);
 
@@ -120,6 +121,8 @@ export default function App() {
                 result={atsResult} 
                 setResult={setAtsResult}
                 refreshUser={refreshUser}
+                file={atsFile}
+                setFile={setAtsFile}
               />
             } />
             {/* Fallback route */}

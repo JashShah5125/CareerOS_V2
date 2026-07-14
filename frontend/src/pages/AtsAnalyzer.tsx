@@ -28,6 +28,8 @@ interface AtsAnalyzerProps {
   result: AtsAnalysisResult | null;
   setResult: (val: AtsAnalysisResult | null) => void;
   refreshUser?: () => void;
+  file: File | null;
+  setFile: (file: File | null) => void;
 }
 
 export default function AtsAnalyzer({
@@ -37,7 +39,9 @@ export default function AtsAnalyzer({
   setJobDescription,
   result,
   setResult,
-  refreshUser
+  refreshUser,
+  file,
+  setFile
 }: AtsAnalyzerProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -140,7 +144,7 @@ export default function AtsAnalyzer({
       });
   };
 
-  const [file, setFile] = useState<File | null>(null);
+  // file state is now lifted to parent App.tsx to preserve uploads across unmounts
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -155,6 +159,12 @@ export default function AtsAnalyzer({
     e.preventDefault();
     if ((!file && !resumeText.trim()) || !jobDescription.trim()) {
       setError('Please provide both your resume and target job description.');
+      return;
+    }
+
+    const isPlaceholderFile = resumeText.trim().toLowerCase().endsWith('.pdf') || resumeText.trim().toLowerCase().endsWith('.docx');
+    if (!file && isPlaceholderFile) {
+      setError('Your selected file was unmounted. Please click "Choose Resume File" to select your resume again.');
       return;
     }
 
