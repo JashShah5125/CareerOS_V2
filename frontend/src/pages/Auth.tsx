@@ -53,10 +53,10 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
 
         google.accounts.id.renderButton(
           document.getElementById('google-signin-btn-div'),
-          { 
-            theme: 'outline', 
-            size: 'large', 
-            width: buttonWidth 
+          {
+            theme: 'outline',
+            size: 'large',
+            width: buttonWidth
           }
         );
         return true;
@@ -139,13 +139,13 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
     <div className="auth-wrapper">
       <div className="auth-card-container">
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ 
-            display: 'inline-flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            width: '48px', 
-            height: '48px', 
-            borderRadius: '12px', 
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
             backgroundColor: 'var(--accent-light)',
             color: 'var(--accent)',
             marginBottom: '0.75rem'
@@ -310,7 +310,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
           <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
             {view === 'login' ? (
               <>
-                New to AI Career Copilot?{' '}
+                New to Career OS?{' '}
                 <button
                   type="button"
                   onClick={() => setView('register')}
