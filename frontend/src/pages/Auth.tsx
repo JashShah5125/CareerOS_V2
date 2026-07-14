@@ -17,11 +17,13 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Clear errors and messages when changing authentication forms
   useEffect(() => {
     setError('');
     setMessage('');
+    setConfirmPassword('');
   }, [view]);
 
   useEffect(() => {
@@ -107,6 +109,12 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
       const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/\-]).{8,}$/;
       if (!passwordRegex.test(password)) {
         setError('Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+        setLoading(false);
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.');
         setLoading(false);
         return;
       }
@@ -264,6 +272,25 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
+                </div>
+              </div>
+            )}
+
+            {view === 'register' && (
+              <div className="form-group">
+                <label htmlFor="confirm-password-input" className="form-label">Confirm Password</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} style={{ position: 'absolute', left: '10px', top: '11px', color: 'var(--text-muted)' }} />
+                  <input
+                    id="confirm-password-input"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="form-input"
+                    placeholder="••••••••"
+                    style={{ paddingLeft: '2.25rem', paddingRight: '2.5rem' }}
+                  />
                 </div>
               </div>
             )}
