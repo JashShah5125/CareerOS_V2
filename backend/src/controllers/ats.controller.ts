@@ -4,6 +4,41 @@ import { getUserIdFromRequest } from './auth.controller';
 import { queryOllama, cleanJsonText } from '../utils/ollama';
 import { extractTextFromBuffer } from '../services/parser.service';
 
+const normalizeDepartment = (track: string): string => {
+  const t = track.toLowerCase();
+  if (t.includes('sales') || t.includes('selling') || t.includes('business development') || t.includes('bd') || t.includes('account manager') || t.includes('revenue')) {
+    return 'sales';
+  }
+  if (t.includes('software') || t.includes('developer') || t.includes('engineer') || t.includes('coding') || t.includes('tech') || t.includes('it') || t.includes('programmer') || t.includes('sysadmin') || t.includes('devops')) {
+    return 'tech';
+  }
+  if (t.includes('hr') || t.includes('recruitment') || t.includes('recruiting') || t.includes('talent') || t.includes('human resources') || t.includes('payroll')) {
+    return 'hr';
+  }
+  if (t.includes('medical') || t.includes('nurse') || t.includes('nursing') || t.includes('doctor') || t.includes('healthcare') || t.includes('clinical')) {
+    return 'healthcare';
+  }
+  if (t.includes('accountant') || t.includes('accounting') || t.includes('finance') || t.includes('bookkeeper') || t.includes('auditor') || t.includes('tax')) {
+    return 'finance';
+  }
+  if (t.includes('design') || t.includes('creative') || t.includes('graphic') || t.includes('illustrator') || t.includes('artist') || t.includes('ui') || t.includes('ux')) {
+    return 'design';
+  }
+  if (t.includes('legal') || t.includes('lawyer') || t.includes('paralegal') || t.includes('compliance')) {
+    return 'legal';
+  }
+  if (t.includes('marketing') || t.includes('advertising') || t.includes('pr') || t.includes('seo')) {
+    return 'marketing';
+  }
+  if (t.includes('education') || t.includes('teaching') || t.includes('teacher') || t.includes('professor')) {
+    return 'education';
+  }
+  if (t.includes('admin') || t.includes('operations') || t.includes('assistant') || t.includes('support')) {
+    return 'operations';
+  }
+  return t;
+};
+
 export const analyzeAtsCustom = async (req: Request, res: Response) => {
   try {
     let { resumeText, jobDescription, fileBase64, fileType } = req.body;
@@ -151,8 +186,8 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       const jobTrack = (resultObj.jobTrack || '').trim();
 
       if (candidateTrack && jobTrack) {
-        const normalizedCandidate = candidateTrack.toLowerCase();
-        const normalizedJob = jobTrack.toLowerCase();
+        const normalizedCandidate = normalizeDepartment(candidateTrack);
+        const normalizedJob = normalizeDepartment(jobTrack);
         
         if (normalizedCandidate === normalizedJob) {
           resultObj.isDomainMismatch = false;
