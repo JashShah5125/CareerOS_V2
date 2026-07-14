@@ -17,6 +17,12 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  // Clear errors and messages when changing authentication forms
+  useEffect(() => {
+    setError('');
+    setMessage('');
+  }, [view]);
+
   useEffect(() => {
     const handleGoogleCallback = (response: any) => {
       setLoading(true);
