@@ -146,9 +146,31 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       const cleaned = cleanJsonText(responseText);
       resultObj = JSON.parse(cleaned);
 
+      // Programmatic override to prevent LLM logic hallucinations
+      const candidateTrack = (resultObj.candidateTrack || '').trim();
+      const jobTrack = (resultObj.jobTrack || '').trim();
+
+      if (candidateTrack && jobTrack) {
+        const normalizedCandidate = candidateTrack.toLowerCase();
+        const normalizedJob = jobTrack.toLowerCase();
+        
+        if (normalizedCandidate === normalizedJob) {
+          resultObj.isDomainMismatch = false;
+          resultObj.domainMismatchMessage = '';
+        } else {
+          resultObj.isDomainMismatch = true;
+          resultObj.domainMismatchMessage = `Candidate's track (${candidateTrack}) does not match the target JD track (${jobTrack}).`;
+        }
+      }
+
       // Force score to 0 if Groq detects a domain mismatch
       if (resultObj.isDomainMismatch) {
         resultObj.overallScore = 0;
+        if (resultObj.subScores) {
+          resultObj.subScores.keywordMatch = 0;
+          resultObj.subScores.experienceMatch = 0;
+          resultObj.subScores.education = 0;
+        }
       }
     } catch (apiError: any) {
       console.warn('[ATS Controller] Ollama custom analysis failed. Falling back to dynamic Javascript matching:', apiError);
