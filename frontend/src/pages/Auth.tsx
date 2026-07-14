@@ -17,6 +17,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Clear errors and messages when changing authentication forms
@@ -24,6 +25,8 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
     setError('');
     setMessage('');
     setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   }, [view]);
 
   useEffect(() => {
@@ -283,7 +286,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
                   <Lock size={16} style={{ position: 'absolute', left: '10px', top: '11px', color: 'var(--text-muted)' }} />
                   <input
                     id="confirm-password-input"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     required
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
@@ -293,7 +296,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     style={{
                       position: 'absolute',
                       right: '10px',
@@ -307,7 +310,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
                       padding: 0
                     }}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
