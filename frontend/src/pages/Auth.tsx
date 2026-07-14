@@ -153,8 +153,9 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
             {view === 'register' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className="form-group">
-                  <label className="form-label">First Name</label>
+                  <label htmlFor="first-name-input" className="form-label">First Name</label>
                   <input
+                    id="first-name-input"
                     type="text"
                     required
                     value={firstName}
@@ -164,8 +165,9 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Last Name</label>
+                  <label htmlFor="last-name-input" className="form-label">Last Name</label>
                   <input
+                    id="last-name-input"
                     type="text"
                     required
                     value={lastName}
@@ -178,10 +180,11 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
             )}
 
             <div className="form-group">
-              <label className="form-label">Email Address</label>
+              <label htmlFor="email-input" className="form-label">Email Address</label>
               <div style={{ position: 'relative' }}>
                 <Mail size={16} style={{ position: 'absolute', left: '10px', top: '11px', color: 'var(--text-muted)' }} />
                 <input
+                  id="email-input"
                   type="email"
                   required
                   value={email}
@@ -196,7 +199,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
             {view !== 'forgot' && (
               <div className="form-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                  <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
+                  <label htmlFor="password-input" className="form-label" style={{ marginBottom: 0 }}>Password</label>
                   {view === 'login' && (
                     <button
                       type="button"
@@ -210,6 +213,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
                 <div style={{ position: 'relative' }}>
                   <Lock size={16} style={{ position: 'absolute', left: '10px', top: '11px', color: 'var(--text-muted)' }} />
                   <input
+                    id="password-input"
                     type="password"
                     required
                     value={password}
