@@ -52,10 +52,10 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
          - Precisely extract the candidate's full name, email, and phone number from the Resume Text.
          - Extract or guess the target company name and role/job title from the Job Description.
       10. DOMAIN MISMATCH CHECK (CRITICAL & STRICT):
-          - Evaluate if the candidate's core functional track (e.g., HR/Recruitment, Nursing, Accountant, Graphic Design, Sales, Software Engineering) is fundamentally different and unrelated to the target Job Description's functional track.
-          - DO NOT flag as mismatch if the candidate's track and target track are in the same general department or business area (e.g., "Sales and Operations" and "Sales Executive" are both Sales tracks and should NOT be mismatched. Likewise, "Frontend Developer" and "Fullstack Developer" or "Data Analyst" and "Software Engineer" are compatible and should NOT be mismatched).
-          - BE EXTREMELY STRICT ONLY on completely unrelated fields: e.g. candidate is a Nurse or HR Recruiter, but the job is for a Software Engineer, Sales Executive, or Accountant.
-          - If they are completely different tracks, set "isDomainMismatch" to true. If they are related, overlapping, or compatible tracks, set "isDomainMismatch" to false.
+          - Compare ONLY the candidate's core functional job role (e.g., Sales/Selling, Software Engineering/Coding, HR/Recruitment, Nursing/Medical) against the target JD's core functional job role.
+          - IGNORE the industry sector of the job (e.g., "IT Services", "Healthcare", "Retail"). For example, "Field Sales Executive - IT Services" has a core job role of Sales. "Sales and Operations" also has a core job role of Sales. Since they are both Sales roles, they are compatible and this is NOT a mismatch.
+          - DO NOT flag as mismatch if the candidate's track and target track are in the same general business department. Only flag if they are completely unrelated functional roles (e.g., candidate is a Nurse or HR recruiter, but the job is for a Software Engineer, Sales Executive, or Accountant).
+          - If they are completely different functional tracks, set "isDomainMismatch" to true. If they are related or compatible, set "isDomainMismatch" to false.
 
       You must respond in strict JSON format. Output raw JSON matching this exact interface:
 
