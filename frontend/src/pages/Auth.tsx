@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authApi, UserProfile } from '../api';
-import { Sparkles, Mail, Lock, User, ArrowRight, Github } from 'lucide-react';
+import { Sparkles, Mail, Lock, User, ArrowRight, Github, Eye, EyeOff } from 'lucide-react';
 import Card from '../components/Card';
 
 interface AuthProps {
@@ -16,6 +16,7 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Clear errors and messages when changing authentication forms
   useEffect(() => {
@@ -233,14 +234,32 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
                   <Lock size={16} style={{ position: 'absolute', left: '10px', top: '11px', color: 'var(--text-muted)' }} />
                   <input
                     id="password-input"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className="form-input"
                     placeholder="••••••••"
-                    style={{ paddingLeft: '2.25rem' }}
+                    style={{ paddingLeft: '2.25rem', paddingRight: '2.5rem' }}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '11px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 0
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
             )}
