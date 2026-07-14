@@ -113,12 +113,16 @@ export default function Auth({ onLoginSuccess }: AuthProps) {
 
       authApi.register({ email, password, firstName, lastName })
         .then(res => {
-          onLoginSuccess(res.user, res.token);
+          setMessage('Account created successfully! Redirecting to dashboard...');
+          // Keep loading active until redirect unmounts the form
+          setTimeout(() => {
+            onLoginSuccess(res.user, res.token);
+          }, 1500);
         })
         .catch(err => {
           setError(err.message || 'Registration failed.');
-        })
-        .finally(() => setLoading(false));
+          setLoading(false);
+        });
     } else {
       authApi.forgotPassword(email)
         .then(res => {
