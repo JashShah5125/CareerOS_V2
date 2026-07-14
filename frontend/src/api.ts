@@ -18,12 +18,16 @@ async function request<T>(path: string, options: RequestInit = {}, retries = 2):
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'API Request failed');
+      const error = new Error(errorData.error || 'API Request failed');
+      (error as any).status = response.status;
+      throw error;
     }
 
     return response.json();
   } catch (error: any) {
-    if (retries > 0) {
+    const isClientError = error.status >= 400 && error.status < 500;
+
+    if (retries > 0 && !isClientError) {
       console.warn(`[API Client] Request to ${path} failed. Retrying in 500ms... (Remaining retries: ${retries})`, error);
       await new Promise(resolve => setTimeout(resolve, 500));
       return request<T>(path, options, retries - 1);
