@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import ResumeAnalyzer from './pages/ResumeAnalyzer';
@@ -11,6 +11,45 @@ import Settings from './pages/Settings';
 import Auth from './pages/Auth';
 import AtsAnalyzer from './pages/AtsAnalyzer';
 import { UserProfile, authApi } from './api';
+
+function PageTitleUpdater() {
+  const location = useLocation();
+
+  useEffect(() => {
+    let title = 'CareerOS';
+    switch (location.pathname) {
+      case '/':
+        title = 'Dashboard | CareerOS';
+        break;
+      case '/analyzer':
+        title = 'Resume Analyzer | CareerOS';
+        break;
+      case '/ats-analyzer':
+        title = 'ATS Analyzer | CareerOS';
+        break;
+      case '/matcher':
+        title = 'Job Matcher | CareerOS';
+        break;
+      case '/tracker':
+        title = 'Application Tracker | CareerOS';
+        break;
+      case '/interview':
+        title = 'Interview Prep | CareerOS';
+        break;
+      case '/analytics':
+        title = 'Career Analytics | CareerOS';
+        break;
+      case '/settings':
+        title = 'Settings | CareerOS';
+        break;
+      default:
+        title = 'CareerOS';
+    }
+    document.title = title;
+  }, [location]);
+
+  return null;
+}
 
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -88,6 +127,7 @@ export default function App() {
 
   return (
     <Router>
+      <PageTitleUpdater />
       <div className="app-container">
         {/* Navigation Sidebar */}
         <Sidebar user={user} onLogout={handleLogout} />
