@@ -52,23 +52,28 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
          - Precisely extract the candidate's full name, email, and phone number from the Resume Text.
          - Extract or guess the target company name and role/job title from the Job Description.
       10. DOMAIN MISMATCH CHECK (CRITICAL & STRICT):
-          - Categorize both the candidate's primary background and the target Job Description into their core functional tracks/departments (e.g., Software Engineering/Tech, Sales/Business Development, HR/Recruitment, Medical/Healthcare, Accounting/Finance, Graphic Design/Creative, Legal, Marketing, Education/Teaching).
-          - BE EXTREMELY STRICT: If the candidate's core functional track/department is different from the target job's functional track/department, this is a 100% domain mismatch. Set "isDomainMismatch" to true and write a clear, friendly explanation in "domainMismatchMessage".
-          - Examples of domain mismatch (Set "isDomainMismatch" to true):
-            * Tech (e.g., PHP Developer, Fullstack, DevOps) vs. Sales (e.g., Sales Executive, Account Manager)
-            * HR (e.g., Recruiter, HR Specialist) vs. Tech (e.g., Software Engineer)
-            * Healthcare (e.g., Nurse, Doctor) vs. Finance (e.g., Accountant, Bookkeeper)
-            * Accounting (e.g., Tax Auditor) vs. Tech (e.g., SysAdmin)
-            * Legal (e.g., Lawyer, paralegal) vs. Creative (e.g., Graphic Designer, illustrator)
-          - DO NOT excuse this mismatch just because the candidate's resume contains tools or keywords from the target track (e.g., an HR recruiter listing they "hire software developers" is still classified as HR, NOT Tech).
-          - Only set "isDomainMismatch" to false if both tracks belong to the same general department/functional area (e.g., Frontend and Fullstack are both Tech; Sales Representative and Sales Executive are both Sales; Accountant and Auditor are both Finance).
+          - Categorize both the candidate's primary background and the target Job Description into exactly one of these closed-list functional departments:
+            * "Software Engineering/Tech"
+            * "Sales/Business Development"
+            * "HR/Recruitment"
+            * "Medical/Healthcare"
+            * "Accounting/Finance"
+            * "Graphic Design/Creative"
+            * "Legal"
+            * "Marketing"
+            * "Education/Teaching"
+            * "Administrative/Operations"
+          - Be extremely precise. For example, "Field Sales Executive", "Sales Representative", and "IT Software Sales" all map to "Sales/Business Development" (NOT Software Engineering/Tech). A "PHP Developer" maps to "Software Engineering/Tech".
+          - Set "isDomainMismatch" to true ONLY if the chosen department category for the candidate's resume is different from the chosen department category for the Job Description. Otherwise, set it to false.
+          - Example of mismatch (isDomainMismatch = true): Resume is "Software Engineering/Tech" but JD is "Sales/Business Development".
+          - Example of match (isDomainMismatch = false): Resume is "Sales/Business Development" (Sales and Operations) and JD is "Sales/Business Development" (IT Software Sales).
 
       You must respond in strict JSON format. Output raw JSON matching this exact interface:
 
       interface AtsAnalysisResult {
         overallScore: number; // 0 to 100 calculated using the matched skills percentage
-        isDomainMismatch: boolean; // Set to true ONLY if domains are completely different/unrelated tracks
-        domainMismatchMessage: string; // Friendly warning message if mismatch is true, otherwise empty string
+        isDomainMismatch: boolean; // Set to true ONLY if chosen department categories are different
+        domainMismatchMessage: string; // Friendly warning message explaining the mismatch (e.g. "Candidate's track (Software Engineering/Tech) does not match the target JD track (Sales/Business Development)")
         subScores: {
           formatting: number; // 0 to 100 (30% weight)
           keywordMatch: number; // 0 to 100 (30% weight)
