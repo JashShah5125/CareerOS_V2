@@ -75,6 +75,14 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
+    const nameRegex = /^[\p{L}\s'-]+$/u;
+    if (firstName && !nameRegex.test(firstName)) {
+      return res.status(400).json({ error: 'First name can only contain letters, spaces, hyphens, and apostrophes.' });
+    }
+    if (lastName && !nameRegex.test(lastName)) {
+      return res.status(400).json({ error: 'Last name can only contain letters, spaces, hyphens, and apostrophes.' });
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
