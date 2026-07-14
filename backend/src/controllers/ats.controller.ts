@@ -241,6 +241,22 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
         if (normalizedCandidate === normalizedJob) {
           resultObj.isDomainMismatch = false;
           resultObj.domainMismatchMessage = '';
+          
+          // Clear any AI deductions or red flags mentioning domain/track mismatch
+          if (Array.isArray(resultObj.scoreDeductions)) {
+            resultObj.scoreDeductions = resultObj.scoreDeductions.filter((d: any) => 
+              !d.factor?.toLowerCase().includes('domain') && 
+              !d.description?.toLowerCase().includes('domain') &&
+              !d.factor?.toLowerCase().includes('track') &&
+              !d.description?.toLowerCase().includes('track')
+            );
+          }
+          if (Array.isArray(resultObj.redFlags)) {
+            resultObj.redFlags = resultObj.redFlags.filter((f: string) => 
+              !f.toLowerCase().includes('domain') && 
+              !f.toLowerCase().includes('track')
+            );
+          }
         } else {
           resultObj.isDomainMismatch = true;
           resultObj.domainMismatchMessage = `Candidate's track (${candidateTrack}) does not match the target JD track (${jobTrack}).`;
