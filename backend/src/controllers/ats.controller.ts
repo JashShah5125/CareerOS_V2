@@ -176,6 +176,8 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
 
       interface AtsAnalysisResult {
         overallScore: number; // 0 to 100 calculated using the matched skills percentage
+        candidateTrack: string; // The candidate's primary track (one of the closed-list departments)
+        jobTrack: string; // The target job description's track (one of the closed-list departments)
         isDomainMismatch: boolean; // Set to true ONLY if chosen department categories are different
         domainMismatchMessage: string; // Friendly warning message explaining the mismatch (e.g. "Candidate's track (Software Engineering/Tech) does not match the target JD track (Sales/Business Development)")
         subScores: {
