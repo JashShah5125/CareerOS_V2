@@ -256,10 +256,7 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       const candidateTrack = (resultObj.candidateTrack || '').trim();
       let jobTrack = (resultObj.jobTrack || '').trim();
 
-      // Only run keyword classifier override on the Job Description to resolve short-title confusion
-      if (jobDescription.length < 120) {
-        jobTrack = classifyTextByKeywords(jobDescription, jobTrack);
-      }
+      // Programmatic track classification relies directly on the LLM's returned tracks
 
       // Programmatic score calculation to resolve LLM division math failures
       if (Array.isArray(resultObj.matchedKeywords) && Array.isArray(resultObj.missingKeywords)) {
