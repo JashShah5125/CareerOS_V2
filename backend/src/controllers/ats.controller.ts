@@ -3,6 +3,8 @@ import { prisma } from '../prisma';
 import { getUserIdFromRequest } from './auth.controller';
 import { queryOllama, cleanJsonText } from '../utils/ollama';
 import { extractTextFromBuffer } from '../services/parser.service';
+import crypto from 'crypto';
+
 
 const normalizeDepartment = (track: string): string => {
   const t = track.toLowerCase();
@@ -55,6 +57,38 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
     if (!resumeText || !jobDescription) {
       return res.status(400).json({ error: 'Both resumeText and jobDescription are required.' });
     }
+
+    // Cache version to invalidate stale cached results when logic is updated
+    const ATS_CACHE_VERSION = 'v7';
+    const inputHash = crypto.createHash('sha256')
+      .update(`${resumeText.trim()}|${jobDescription.trim()}|${ATS_CACHE_VERSION}`)
+      .digest('hex');
+
+    // Check database cache first
+    try {
+      const cachedResult = await prisma.atsCache.findUnique({
+        where: { inputHash }
+      });
+      if (cachedResult && cachedResult.resultJson) {
+        console.log(`[ATS Cache] SUCCESS: Found cached result for inputHash: ${inputHash}`);
+        
+        // Deduct 1 credit for cached ATS scan
+        try {
+          const userId = await getUserIdFromRequest(req);
+          await prisma.user.update({
+            where: { id: userId },
+            data: { credits: { decrement: 1 } }
+          });
+        } catch (creditErr) {
+          console.warn('[ATS Cache] Failed to decrement user credits for cached scan:', creditErr);
+        }
+
+        return res.json(cachedResult.resultJson);
+      }
+    } catch (cacheErr) {
+      console.warn('[ATS Cache] Failed to query cache database:', cacheErr);
+    }
+
 
     // Initial validation passed. Domain mismatch checks are delegated to Groq semantic analysis.
 
@@ -380,6 +414,19 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       });
     } catch (e) {
       console.warn('[ATS Controller] Failed to decrement user credits:', e);
+    }
+
+    // Save generated evaluation result to MongoDB Atlas cache
+    try {
+      await prisma.atsCache.create({
+        data: {
+          inputHash,
+          resultJson: resultObj as any
+        }
+      });
+      console.log(`[ATS Cache] SUCCESS: Saved new evaluation to cache: ${inputHash}`);
+    } catch (saveErr) {
+      console.warn('[ATS Cache] Failed to save evaluation result to cache:', saveErr);
     }
 
     return res.json(resultObj);

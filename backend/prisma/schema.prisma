@@ -166,3 +166,10 @@ model Payment {
   transactionId String   @unique
   createdAt     DateTime @default(now())
 }
+
+model AtsCache {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  inputHash  String   @unique
+  resultJson Json
+  createdAt  DateTime @default(now())
+}
