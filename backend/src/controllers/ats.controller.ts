@@ -452,18 +452,37 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       const resumeQualityScore = Math.min(100, Math.round((verbCount * 6) + (metricsCount * 15)));
       const overallScore = keywordMatchScore;
 
+      // Programmatic track classification for the Javascript fallback
+      const candidateTrackJs = classifyTextByKeywords(resumeText, 'Software Engineering/Tech');
+      const jobTrackJs = classifyTextByKeywords(jobDescription, 'Software Engineering/Tech');
+      
+      const normalizedCandidateJs = normalizeDepartment(candidateTrackJs);
+      const normalizedJobJs = normalizeDepartment(jobTrackJs);
+
+      let isDomainMismatchJs = false;
+      let domainMismatchMessageJs = '';
+
+      if (normalizedCandidateJs !== normalizedJobJs) {
+        isDomainMismatchJs = true;
+        domainMismatchMessageJs = `Candidate's track (${candidateTrackJs}) does not match the target JD track (${jobTrackJs}).`;
+      }
+
       resultObj = {
-        overallScore,
+        overallScore: isDomainMismatchJs ? 0 : overallScore,
+        candidateTrack: candidateTrackJs,
+        jobTrack: jobTrackJs,
+        isDomainMismatch: isDomainMismatchJs,
+        domainMismatchMessage: domainMismatchMessageJs,
         atsCompatibility: formattingScore,
-        jobMatchScore: keywordMatchScore,
-        resumeQuality: resumeQualityScore,
+        jobMatchScore: isDomainMismatchJs ? 0 : keywordMatchScore,
+        resumeQuality: isDomainMismatchJs ? 0 : resumeQualityScore,
         subScores: {
           formatting: formattingScore,
-          keywordMatch: keywordMatchScore,
-          experienceMatch: 65,
-          projects: 70,
-          education: 90,
-          softSkills: 80
+          keywordMatch: isDomainMismatchJs ? 0 : keywordMatchScore,
+          experienceMatch: isDomainMismatchJs ? 0 : 65,
+          projects: isDomainMismatchJs ? 0 : 70,
+          education: isDomainMismatchJs ? 0 : 90,
+          softSkills: isDomainMismatchJs ? 0 : 80
         },
         strengthMetrics: {
           atsParsing: formattingScore,
