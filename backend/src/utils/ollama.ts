@@ -29,7 +29,7 @@ export const queryOllama = async (systemPrompt: string, userPrompt: string): Pro
           response_format: {
             type: 'json_object' // Guarantees strict JSON output from Groq
           },
-          temperature: 0.0
+          temperature: 0.1
         })
       });
 
@@ -65,7 +65,7 @@ export const queryOllama = async (systemPrompt: string, userPrompt: string): Pro
         ],
         stream: false,
         options: {
-          temperature: 0.0
+          temperature: 0.1
         },
         format: 'json'
       }),

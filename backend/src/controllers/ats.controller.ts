@@ -257,9 +257,21 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       let jobTrack = (resultObj.jobTrack || '').trim();
 
       // Only run keyword classifier override on the Job Description to resolve short-title confusion
-      jobTrack = classifyTextByKeywords(jobDescription, jobTrack);
+      if (jobDescription.length < 120) {
+        jobTrack = classifyTextByKeywords(jobDescription, jobTrack);
+      }
 
-      if (candidateTrack && jobTrack) {
+      // Programmatic score calculation to resolve LLM division math failures
+      if (Array.isArray(resultObj.matchedKeywords) && Array.isArray(resultObj.missingKeywords)) {
+        const totalKeywords = resultObj.matchedKeywords.length + resultObj.missingKeywords.length;
+        if (totalKeywords > 0) {
+          const calculatedScore = Math.round((resultObj.matchedKeywords.length / totalKeywords) * 100);
+          resultObj.overallScore = calculatedScore;
+          if (resultObj.subScores) {
+            resultObj.subScores.keywordMatch = calculatedScore;
+          }
+        }
+      } if (candidateTrack && jobTrack) {
         const normalizedCandidate = normalizeDepartment(candidateTrack);
         const normalizedJob = normalizeDepartment(jobTrack);
         
