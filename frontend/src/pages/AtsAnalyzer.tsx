@@ -529,7 +529,7 @@ export default function AtsAnalyzer({
             <Card title="Skills Found in Resume & JD" subtitle="Matches successfully identified by parser checks">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
                 {(() => {
-                  const matched = result.keywordDensity.filter(row => row.countInResume > 0);
+                  const matched = (result.keywordDensity || []).filter(row => row.countInResume > 0);
                   if (matched.length === 0) {
                     return <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No matching keywords identified.</span>;
                   }
@@ -545,7 +545,7 @@ export default function AtsAnalyzer({
             <Card title="Skills Missing from Resume" subtitle="Keywords required in JD but absent from your resume text">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
                 {(() => {
-                  const missing = result.keywordDensity.filter(row => row.countInResume === 0);
+                  const missing = (result.keywordDensity || []).filter(row => row.countInResume === 0);
                   if (missing.length === 0) {
                     return <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>All keywords are fully matched! Great job.</span>;
                   }
@@ -573,7 +573,7 @@ export default function AtsAnalyzer({
                   </tr>
                 </thead>
                 <tbody>
-                  {result.keywordDensity.map((row, idx) => (
+                  {(result.keywordDensity || []).map((row, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border)', backgroundColor: idx % 2 === 0 ? 'transparent' : 'var(--bg-app)' }}>
                       <td style={{ padding: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>{row.keyword}</td>
                       <td style={{ padding: '0.75rem' }}>{row.countInJd}x</td>
@@ -594,10 +594,10 @@ export default function AtsAnalyzer({
           </Card>
 
           {/* Section 5: Copy-Pasteable Suggested Resume Bullets */}
-          {result.tailoredBulletPoints.length > 0 && (
+          {(result.tailoredBulletPoints || []).length > 0 && (
             <Card title="AI-Tailored Copy-Pasteable Resume Bullets" subtitle="Directly incorporate these context-appropriate keywords and metrics suggestions">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '0.5rem', maxHeight: '350px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                {result.tailoredBulletPoints.map((bullet, idx) => (
+                {(result.tailoredBulletPoints || []).map((bullet, idx) => (
                   <div key={idx} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '1rem', backgroundColor: 'var(--bg-app)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                       <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase' }}>
