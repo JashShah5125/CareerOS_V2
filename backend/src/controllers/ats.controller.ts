@@ -9,7 +9,7 @@ const normalizeDepartment = (track: string): string => {
   if (t.includes('sales') || t.includes('selling') || t.includes('business development') || t.includes('bd') || t.includes('account manager') || t.includes('revenue') || t.includes('sales executive')) {
     return 'sales';
   }
-  if (t.includes('software') || t.includes('developer') || t.includes('engineer') || t.includes('coding') || t.includes('tech') || t.includes('it') || t.includes('programmer') || t.includes('sysadmin') || t.includes('devops')) {
+  if (t.includes('software') || t.includes('developer') || t.includes('engineer') || t.includes('coding') || t.includes('tech') || t.split(/\s+/).includes('it') || t.includes('information technology') || t.includes('programmer') || t.includes('sysadmin') || t.includes('devops')) {
     return 'tech';
   }
   if (t.includes('hr') || t.includes('recruitment') || t.includes('recruiting') || t.includes('talent') || t.includes('human resources') || t.includes('payroll')) {
