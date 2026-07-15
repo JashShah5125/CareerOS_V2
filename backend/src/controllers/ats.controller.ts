@@ -42,7 +42,7 @@ const normalizeDepartment = (track: string): string => {
 const classifyTextByKeywords = (text: string, defaultCategory: string): string => {
   const t = text.toLowerCase();
   
-  const techKeywords = ['developer', 'engineer', 'programmer', 'coding', 'software', 'fullstack', 'frontend', 'backend', 'php', 'laravel', 'javascript', 'typescript', 'python', 'java', 'react', 'node', 'mysql', 'postgresql', 'tech stack', 'web dev', 'git', 'data analyst', 'data scientist', 'tableau', 'power bi', 'sql', 'excel', 'statistics', 'pandas', 'analytics', 'data analysis', 'data science', 'machine learning', 'ai'];
+  const techKeywords = ['developer', 'engineer', 'programmer', 'coding', 'fullstack', 'frontend', 'backend', 'php', 'laravel', 'javascript', 'typescript', 'python', 'java', 'react', 'node', 'mysql', 'postgresql', 'web dev', 'git', 'data scientist', 'tableau', 'power bi', 'sql', 'pandas', 'data science', 'machine learning', 'ai'];
   const salesKeywords = ['sales', 'selling', 'business development', 'bd', 'account executive', 'account manager', 'cold calling', 'sales executive', 'sales representative', 'lead generation', 'pipeline management', 'saas sales', 'deal closing', 'b2b sales', 'sales head', 'sales manager'];
   const hrKeywords = ['recruiter', 'recruitment', 'recruiting', 'talent acquisition', 'human resources', ' hr ', ' payroll ', 'hris', 'employee relations'];
   const financeKeywords = ['accounting', 'accountant', 'finance', 'bookkeeper', 'auditor', 'taxation', 'financial analyst', 'ledger', 'balance sheet', 'p&l'];
