@@ -29,7 +29,7 @@ export const queryOllama = async (systemPrompt: string, userPrompt: string): Pro
           response_format: {
             type: 'json_object' // Guarantees strict JSON output from Groq
           },
-          temperature: 0.3
+          temperature: 0.0
         })
       });
 
@@ -43,8 +43,8 @@ export const queryOllama = async (systemPrompt: string, userPrompt: string): Pro
         const errDetails = await response.text();
         console.warn(`[AI Client] Groq API returned error status ${response.status}:`, errDetails);
       }
-    } catch (groqErr: any) {
-      console.warn(`[AI Client] Groq Cloud API connection failed (${groqErr.message}). Attempting local Ollama fallback...`);
+    } catch (e: any) {
+      console.warn(`[AI Client] Groq query failed (${e.message}).`);
     }
   }
 
@@ -65,7 +65,7 @@ export const queryOllama = async (systemPrompt: string, userPrompt: string): Pro
         ],
         stream: false,
         options: {
-          temperature: 0.3
+          temperature: 0.0
         },
         format: 'json'
       }),

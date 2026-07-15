@@ -142,7 +142,8 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
          - Calculate the "overallScore" based strictly on the percentage of keywords and skills matched and present in the resume relative to the requirements in the job description (keywordMatch score). Ignore formatting, experience years, projects, or education in the overall score calculation.
          - overallScore = keywordMatch score.
       5. KEYWORD DENSITY MATRIX:
-         - Count the frequency of key words in the Job Description vs the Resume.
+         - Extract at least 15 distinct core keywords, tools, frameworks, skills, or certifications from the Job Description (or as many as possible if the Job Description is very short).
+         - Count the frequency of each of these keywords in the Job Description vs the Resume.
          - Provide explanations for each (e.g., "Laravel appears 10 times in the JD but is missing from your resume").
       6. SCORE DEDUCTIONS LEDGER:
          - Generate a list of positive score boosts (e.g., +10 for Summary, +12 for Contact info) and negative deductions (e.g. -18 for Missing Laravel, -8 for low word count) explaining exactly how the score was calculated.
