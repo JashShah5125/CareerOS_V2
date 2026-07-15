@@ -271,11 +271,15 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
             resultObj.subScores.keywordMatch = calculatedScore;
           }
         }
-      } if (candidateTrack && jobTrack) {
+      }
+        if (candidateTrack && jobTrack) {
         const normalizedCandidate = normalizeDepartment(candidateTrack);
         const normalizedJob = normalizeDepartment(jobTrack);
         
-        if (normalizedCandidate === normalizedJob) {
+        if (normalizedCandidate && normalizedJob && normalizedCandidate !== normalizedJob) {
+          resultObj.isDomainMismatch = true;
+          resultObj.domainMismatchMessage = `Candidate's track (${candidateTrack}) does not match the target JD track (${jobTrack}).`;
+        } else {
           resultObj.isDomainMismatch = false;
           resultObj.domainMismatchMessage = '';
           
@@ -294,9 +298,6 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
               !f.toLowerCase().includes('track')
             );
           }
-        } else {
-          resultObj.isDomainMismatch = true;
-          resultObj.domainMismatchMessage = `Candidate's track (${candidateTrack}) does not match the target JD track (${jobTrack}).`;
         }
       }
 
@@ -453,8 +454,8 @@ export const analyzeAtsCustom = async (req: Request, res: Response) => {
       const overallScore = keywordMatchScore;
 
       // Programmatic track classification for the Javascript fallback
-      const candidateTrackJs = classifyTextByKeywords(resumeText, 'Software Engineering/Tech');
-      const jobTrackJs = classifyTextByKeywords(jobDescription, 'Software Engineering/Tech');
+      const candidateTrackJs = classifyTextByKeywords(resumeText, '');
+      const jobTrackJs = classifyTextByKeywords(jobDescription, '');
       
       const normalizedCandidateJs = normalizeDepartment(candidateTrackJs);
       const normalizedJobJs = normalizeDepartment(jobTrackJs);
