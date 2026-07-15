@@ -477,7 +477,7 @@ export default function AtsAnalyzer({
                   <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>ATS Formatting</span>
                   <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>30% Weight</span>
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores.formatting}%</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores?.formatting ?? 0}%</div>
               </div>
 
               <div style={{ padding: '0.85rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-app)' }}>
@@ -485,7 +485,7 @@ export default function AtsAnalyzer({
                   <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Keyword Match</span>
                   <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>30% Weight</span>
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores.keywordMatch}%</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores?.keywordMatch ?? 0}%</div>
               </div>
 
               <div style={{ padding: '0.85rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-app)' }}>
@@ -493,7 +493,7 @@ export default function AtsAnalyzer({
                   <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Experience Match</span>
                   <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>20% Weight</span>
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores.experienceMatch}%</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores?.experienceMatch ?? 0}%</div>
               </div>
 
               <div style={{ padding: '0.85rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-app)' }}>
@@ -501,7 +501,7 @@ export default function AtsAnalyzer({
                   <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Projects Optimization</span>
                   <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>10% Weight</span>
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores.projects}%</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores?.projects ?? 0}%</div>
               </div>
 
               <div style={{ padding: '0.85rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-app)' }}>
@@ -509,7 +509,7 @@ export default function AtsAnalyzer({
                   <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Education Alignment</span>
                   <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>5% Weight</span>
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores.education}%</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores?.education ?? 0}%</div>
               </div>
 
               <div style={{ padding: '0.85rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-app)' }}>
@@ -517,7 +517,7 @@ export default function AtsAnalyzer({
                   <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Soft Skills</span>
                   <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>5% Weight</span>
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores.softSkills}%</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.subScores?.softSkills ?? 0}%</div>
               </div>
             </div>
           </Card>
