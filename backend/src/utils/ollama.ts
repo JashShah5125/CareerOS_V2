@@ -6,7 +6,7 @@ export const cleanJsonText = (text: string): string => {
 
 export const queryOllama = async (systemPrompt: string, userPrompt: string): Promise<string> => {
   const groqApiKey = process.env.GROQ_API_KEY;
-  const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+  const groqModel = 'llama-3.3-70b-versatile';
   const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
   const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.2:3b';
 
