@@ -498,14 +498,14 @@ export default function Settings({ refreshUser }: SettingsProps) {
                     <ul style={{ paddingLeft: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
                       <li>1 Resume Upload</li>
                       <li>Basic ATS Score</li>
-                      <li>10 AI Chats/month</li>
+                      <li>Basic Resume Analyzer</li>
                       <li>Basic Dashboard</li>
                     </ul>
                     <button
                       type="button"
                       onClick={() => selectSubscriptionPlan('Free')}
                       className={`btn ${activePlan === 'Free' ? 'btn-primary' : 'btn-secondary'}`}
-                      style={{ width: '100%', fontSize: '0.75rem', opacity: (activePlan === 'Pro' || activePlan === 'Premium') ? 0.5 : 1, cursor: (activePlan === 'Pro' || activePlan === 'Premium') ? 'not-allowed' : 'pointer' }}
+                      style={{ width: '100%', fontSize: '0.75rem', opacity: (activePlan === 'Free' || activePlan === 'Pro' || activePlan === 'Premium') ? 0.5 : 1, cursor: (activePlan === 'Pro' || activePlan === 'Premium') ? 'not-allowed' : 'pointer' }}
                       disabled={activePlan === 'Pro' || activePlan === 'Premium'}
                     >
                       {activePlan === 'Free' ? 'Current Plan' : (activePlan === 'Pro' || activePlan === 'Premium') ? 'Downgrade Disabled' : 'Select Free'}
@@ -525,11 +525,11 @@ export default function Settings({ refreshUser }: SettingsProps) {
                     <div style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0.5rem 0' }}>₹499<span style={{ fontSize: '0.8rem', fontWeight: 500 }}>/mo</span></div>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Best for students & active job applicants seeking callback boosts.</p>
                     <ul style={{ paddingLeft: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
-                      <li>Unlimited Tailoring</li>
+                      <li>Unlimited Tailoring Suggestions</li>
                       <li>Unlimited ATS Runs</li>
-                      <li>AI Cover Letters</li>
-                      <li>Interview Preparation</li>
-                      <li>Follow-up Reminders</li>
+                      <li>Interview Preparation (STAR Grading)</li>
+                      <li>Job Matcher & Search Finder</li>
+                      <li>Application Kanban Tracker</li>
                     </ul>
                     <button
                       type="button"
@@ -556,10 +556,9 @@ export default function Settings({ refreshUser }: SettingsProps) {
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>For career switchers needing high-touch support & fast queues.</p>
                     <ul style={{ paddingLeft: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
                       <li>Everything in Pro</li>
-                      <li>Voice Mock Interviews</li>
-                      <li>Salary Negotiator</li>
-                      <li>Priority AI queues</li>
-                      <li>Learning Roadmaps</li>
+                      <li>Developer API Platform Access</li>
+                      <li>Centralized Career Analytics & Trends</li>
+                      <li>Multi-Workspace Boards Configuration</li>
                     </ul>
                     <button
                       type="button"
