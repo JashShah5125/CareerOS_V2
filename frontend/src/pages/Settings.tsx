@@ -267,6 +267,58 @@ export default function Settings({ refreshUser }: SettingsProps) {
     }
   };
 
+  const initiateServiceBookingPayment = (serviceName: string, price: number) => {
+    const rzpAmount = price * 100; // Razorpay expects amount in paise
+    const scriptId = 'razorpay-checkout-script';
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+    const openCheckout = () => {
+      const options = {
+        key: "rzp_test_T53dL4o847GrZD", // Razorpay Key ID
+        amount: rzpAmount,
+        currency: "INR",
+        name: "CareerOS Marketplace",
+        description: `Booking for ${serviceName}`,
+        image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120",
+        handler: function (response: any) {
+          // Success callback: show success message
+          setSuccessMsg(`Booking successful for "${serviceName}"! Payment ID: ${response.razorpay_payment_id}. Our partners will email you within 24 hours.`);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setTimeout(() => setSuccessMsg(''), 6000);
+        },
+        prefill: {
+          name: profile ? `${profile.firstName} ${profile.lastName}` : "Jash Shah",
+          email: profile?.email || "jashshah@gmail.com",
+        },
+        theme: {
+          color: "#c084fc",
+        },
+        modal: {
+          ondismiss: function () {
+            console.log("Razorpay checkout overlay dismissed by user.");
+          }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    };
+
+    if (!script) {
+      script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = openCheckout;
+      script.onerror = () => {
+        alert('Failed to load Razorpay checkout SDK. Please check your internet connection.');
+      };
+      document.body.appendChild(script);
+    } else {
+      openCheckout();
+    }
+  };
+
   const selectSubscriptionPlan = (plan: 'Free' | 'Pro' | 'Premium') => {
     if (plan === 'Free') {
       setActivePlan('Free');
@@ -688,7 +740,7 @@ export default function Settings({ refreshUser }: SettingsProps) {
                     <div style={{ textAlign: 'right' }}>
                       <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>₹1,999</span>
                       <button
-                        onClick={() => alert('Connecting you to partner Resume Writers... (15% platform commission applies)')}
+                        onClick={() => initiateServiceBookingPayment('Professional Resume Writing', 1999)}
                         className="btn btn-secondary"
                         style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem', height: '24px', marginTop: '0.25rem' }}
                       >
@@ -706,7 +758,7 @@ export default function Settings({ refreshUser }: SettingsProps) {
                     <div style={{ textAlign: 'right' }}>
                       <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>₹2,499</span>
                       <button
-                        onClick={() => alert('Connecting you to partner Interview Coaches... (15% platform commission applies)')}
+                        onClick={() => initiateServiceBookingPayment('1-on-1 Coding Mock Interview', 2499)}
                         className="btn btn-secondary"
                         style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem', height: '24px', marginTop: '0.25rem' }}
                       >
