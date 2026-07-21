@@ -214,7 +214,7 @@ export default function ApplicationTracker() {
                     value={activeCard.candidateName || ''}
                     onChange={e => setActiveCard({ ...activeCard, candidateName: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. John Doe"
+                    placeholder="e.g. Name"
                   />
                 </div>
 
@@ -225,7 +225,7 @@ export default function ApplicationTracker() {
                     value={activeCard.candidateEmail || ''}
                     onChange={e => setActiveCard({ ...activeCard, candidateEmail: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. johndoe@example.com"
+                    placeholder="e.g. mail@gmail.com"
                   />
                 </div>
 
@@ -236,7 +236,7 @@ export default function ApplicationTracker() {
                     value={activeCard.candidatePhone || ''}
                     onChange={e => setActiveCard({ ...activeCard, candidatePhone: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. +1 (555) 000-0000"
+                    placeholder="e.g. +91 9876543210"
                   />
                 </div>
 
