@@ -843,10 +843,18 @@ export default function Settings({ refreshUser }: SettingsProps) {
                               marginTop: '0.5rem',
                               lineHeight: '1.4'
                             }}>
-                              <strong>How to start:</strong> Run <code>ollama serve</code> to launch the local model.<br />
-                              <span style={{ display: 'block', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
-                                💡 <em>Or, configure a <code>GROQ_API_KEY</code> in your <code>backend/.env</code> file to run high-speed Llama models for free via Groq Cloud!</em>
-                              </span>
+                              {isGroq ? (
+                                <>
+                                  <strong>Groq Connection Failed:</strong> {modelStatus.error || 'Please check that your GROQ_API_KEY environment variable is configured correctly.'}
+                                </>
+                              ) : (
+                                <>
+                                  <strong>How to start:</strong> Run <code>ollama serve</code> to launch the local model.<br />
+                                  <span style={{ display: 'block', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
+                                    💡 <em>Or, configure a <code>GROQ_API_KEY</code> in your <code>backend/.env</code> file to run high-speed Llama models for free via Groq Cloud!</em>
+                                  </span>
+                                </>
+                              )}
                             </div>
                           )}
 

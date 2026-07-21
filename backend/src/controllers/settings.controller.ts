@@ -117,6 +117,49 @@ export const updateSettings = async (req: Request, res: Response) => {
 
 // Check local Ollama connection or Groq API status based on env setup
 export const getModelStatus = async (req: Request, res: Response) => {
+  const groqApiKey = process.env.GROQ_API_KEY;
+
+  if (groqApiKey && groqApiKey.trim() !== '') {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqApiKey.trim()}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 1
+        })
+      });
+
+      if (response.ok) {
+        return res.json({
+          status: 'ONLINE',
+          model: 'llama-3.3-70b-versatile',
+          ollamaUrl: 'https://api.groq.com (Groq Cloud)',
+          modelPulled: true,
+          availableModels: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
+          error: ''
+        });
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `Groq returned status ${response.status}`);
+      }
+    } catch (err: any) {
+      return res.json({
+        status: 'OFFLINE',
+        model: 'llama-3.3-70b-versatile',
+        ollamaUrl: 'https://api.groq.com (Groq Cloud)',
+        modelPulled: false,
+        availableModels: [],
+        error: `Connection to Groq Cloud failed: ${err.message}`
+      });
+    }
+  }
+
+  // Fallback to local Ollama check if GROQ_API_KEY is not configured
   const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
   const targetModel = process.env.OLLAMA_MODEL || 'llama3.2:3b';
 
