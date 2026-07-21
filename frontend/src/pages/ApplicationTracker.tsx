@@ -214,7 +214,7 @@ export default function ApplicationTracker() {
                     value={activeCard.candidateName || ''}
                     onChange={e => setActiveCard({ ...activeCard, candidateName: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. Vinayak Katheriya"
+                    placeholder="e.g. John Doe"
                   />
                 </div>
 
@@ -225,7 +225,7 @@ export default function ApplicationTracker() {
                     value={activeCard.candidateEmail || ''}
                     onChange={e => setActiveCard({ ...activeCard, candidateEmail: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. vinayak@example.com"
+                    placeholder="e.g. johndoe@example.com"
                   />
                 </div>
 
@@ -236,7 +236,7 @@ export default function ApplicationTracker() {
                     value={activeCard.candidatePhone || ''}
                     onChange={e => setActiveCard({ ...activeCard, candidatePhone: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. +91 8793435992"
+                    placeholder="e.g. +1 (555) 000-0000"
                   />
                 </div>
 
@@ -248,7 +248,7 @@ export default function ApplicationTracker() {
                     value={activeCard.company || ''}
                     onChange={e => setActiveCard({ ...activeCard, company: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. Stripe"
+                    placeholder="e.g. Google"
                   />
                 </div>
                 
@@ -260,7 +260,7 @@ export default function ApplicationTracker() {
                     value={activeCard.role || ''}
                     onChange={e => setActiveCard({ ...activeCard, role: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. Frontend Developer"
+                    placeholder="e.g. Software Engineer"
                   />
                 </div>
 
@@ -271,7 +271,7 @@ export default function ApplicationTracker() {
                     value={activeCard.salary || ''}
                     onChange={e => setActiveCard({ ...activeCard, salary: e.target.value })}
                     className="form-input"
-                    placeholder="e.g. $120k/yr"
+                    placeholder="e.g. ₹12L/yr"
                   />
                 </div>
 
