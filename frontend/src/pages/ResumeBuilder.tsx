@@ -475,22 +475,24 @@ export default function ResumeBuilder({
       )}
 
       {/* Main Mode Selection Bar */}
-      <div className="builder-header" style={{ marginBottom: '1.5rem' }}>
-        <div>
-          <h1>AI Resume Builder</h1>
-          <p>Align and optimize your resume keywords dynamically for a specific job application.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.5rem' }}>
+        <div className="builder-header-row">
+          <h1 style={{ margin: 0 }}>AI Resume Builder</h1>
+          <button
+            type="button"
+            onClick={() => {
+              setViewingSavedList(!viewingSavedList);
+              setResult(null);
+            }}
+            className="btn btn-secondary"
+            style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', flexShrink: 0 }}
+          >
+            {viewingSavedList ? 'Back to Generator' : `View Saved Resumes (${savedResumes.length})`}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setViewingSavedList(!viewingSavedList);
-            setResult(null);
-          }}
-          className="btn btn-secondary"
-          style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
-        >
-          {viewingSavedList ? 'Back to Generator' : `View Saved Resumes (${savedResumes.length})`}
-        </button>
+        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+          Align and optimize your resume keywords dynamically for a specific job application.
+        </p>
       </div>
 
       {viewingSavedList ? (
