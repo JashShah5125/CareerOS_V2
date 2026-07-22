@@ -35,6 +35,10 @@ export default function ResumeBuilder({
   const [savedResumes, setSavedResumes] = useState<any[]>([]);
   const [viewingSavedList, setViewingSavedList] = useState(false);
 
+  const [nameError, setNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
   useEffect(() => {
     // Load previously tailored resumes
     resumeApi.listTailored()
@@ -65,6 +69,7 @@ export default function ResumeBuilder({
 
   const handleSaveToDb = () => {
     if (!result) return;
+    if (!validatePersonalInfo()) return;
     setSaving(true);
     resumeApi.saveTailored({
       company: result.company,
@@ -97,6 +102,7 @@ export default function ResumeBuilder({
   // Compile and Download PDF with professional A4 print formatting rules
   const handleDownloadPdf = () => {
     if (!result) return;
+    if (!validatePersonalInfo()) return;
     const { personalInfo, summary, skills, experience, projects, education } = result.content;
 
     const doc = new jsPDF({
@@ -275,9 +281,64 @@ export default function ResumeBuilder({
     doc.save(filename);
   };
 
+  const validatePersonalInfo = (): boolean => {
+    if (!result) return false;
+    const { fullName, email, phone } = result.content.personalInfo;
+    
+    const nameRegex = /^[a-zA-Z\s]+$/;
+    if (!fullName || !nameRegex.test(fullName)) {
+      alert('Validation Error: Name must contain only letters and spaces.');
+      return false;
+    }
+    
+    if (!email || !email.includes('@')) {
+      alert('Validation Error: Email is compulsory and must contain @ symbol.');
+      return false;
+    }
+    
+    const phoneClean = phone.trim();
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phoneClean)) {
+      alert('Validation Error: Phone number must be exactly 10 digits and contain only numbers.');
+      return false;
+    }
+    
+    return true;
+  };
+
   // Local helper to update nested JSON values
   const updatePersonalInfo = (field: string, value: string) => {
     if (!result) return;
+
+    if (field === 'fullName') {
+      const nameRegex = /^[a-zA-Z\s]*$/;
+      if (!nameRegex.test(value)) {
+        setNameError('Name must contain only letters and spaces.');
+      } else {
+        setNameError('');
+      }
+    }
+
+    if (field === 'email') {
+      if (value && !value.includes('@')) {
+        setEmailError('Email is compulsory and must contain @ symbol.');
+      } else {
+        setEmailError('');
+      }
+    }
+
+    if (field === 'phone') {
+      const phoneClean = value.trim();
+      const phoneDigitsOnly = /^\d*$/;
+      if (!phoneDigitsOnly.test(phoneClean)) {
+        setPhoneError('Phone number must contain only numbers.');
+      } else if (phoneClean.length !== 10) {
+        setPhoneError('Phone number must be exactly 10 digits.');
+      } else {
+        setPhoneError('');
+      }
+    }
+
     setResult({
       ...result,
       content: {
@@ -545,7 +606,9 @@ export default function ResumeBuilder({
                     value={result.content.personalInfo.fullName}
                     onChange={e => updatePersonalInfo('fullName', e.target.value)}
                     className="form-input"
+                    style={{ borderColor: nameError ? 'var(--danger)' : 'var(--border)' }}
                   />
+                  {nameError && <span style={{ color: 'var(--danger)', fontSize: '0.65rem', display: 'block', marginTop: '0.25rem' }}>{nameError}</span>}
                 </div>
                 <div className="grid-2">
                   <div className="form-group">
@@ -555,7 +618,9 @@ export default function ResumeBuilder({
                       value={result.content.personalInfo.email}
                       onChange={e => updatePersonalInfo('email', e.target.value)}
                       className="form-input"
+                      style={{ borderColor: emailError ? 'var(--danger)' : 'var(--border)' }}
                     />
+                    {emailError && <span style={{ color: 'var(--danger)', fontSize: '0.65rem', display: 'block', marginTop: '0.25rem' }}>{emailError}</span>}
                   </div>
                   <div className="form-group">
                     <label className="form-label" style={{ fontSize: '0.7rem' }}>Phone</label>
@@ -564,7 +629,9 @@ export default function ResumeBuilder({
                       value={result.content.personalInfo.phone}
                       onChange={e => updatePersonalInfo('phone', e.target.value)}
                       className="form-input"
+                      style={{ borderColor: phoneError ? 'var(--danger)' : 'var(--border)' }}
                     />
+                    {phoneError && <span style={{ color: 'var(--danger)', fontSize: '0.65rem', display: 'block', marginTop: '0.25rem' }}>{phoneError}</span>}
                   </div>
                 </div>
                 <div className="form-group">
