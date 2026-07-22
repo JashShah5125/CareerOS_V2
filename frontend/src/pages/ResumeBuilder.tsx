@@ -4,14 +4,33 @@ import Card from '../components/Card';
 import { Sparkles, Download, Save, Plus, Trash2, ArrowLeft, FileText, CheckCircle2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 
-export default function ResumeBuilder() {
-  const [company, setCompany] = useState('');
-  const [role, setRole] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
-  const [resumeText, setResumeText] = useState('');
+interface ResumeBuilderProps {
+  company: string;
+  setCompany: (val: string) => void;
+  role: string;
+  setRole: (val: string) => void;
+  jobDescription: string;
+  setJobDescription: (val: string) => void;
+  resumeText: string;
+  setResumeText: (val: string) => void;
+  result: TailoredResumeResult | null;
+  setResult: (val: TailoredResumeResult | null) => void;
+}
+
+export default function ResumeBuilder({
+  company,
+  setCompany,
+  role,
+  setRole,
+  jobDescription,
+  setJobDescription,
+  resumeText,
+  setResumeText,
+  result,
+  setResult
+}: ResumeBuilderProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<TailoredResumeResult | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [savedResumes, setSavedResumes] = useState<any[]>([]);
   const [viewingSavedList, setViewingSavedList] = useState(false);
@@ -475,7 +494,7 @@ export default function ResumeBuilder() {
               ) : (
                 <>
                   <Sparkles size={16} />
-                  <span>Generate Tailored Resume (Deducts 1 Credit)</span>
+                  <span>Generate Tailored Resume</span>
                 </>
               )}
             </button>

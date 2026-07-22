@@ -73,6 +73,12 @@ export default function App() {
   const [matcherJobDescription, setMatcherJobDescription] = useState('');
   const [matcherResult, setMatcherResult] = useState<any>(null);
 
+  const [builderCompany, setBuilderCompany] = useState('');
+  const [builderRole, setBuilderRole] = useState('');
+  const [builderJobDescription, setBuilderJobDescription] = useState('');
+  const [builderResumeText, setBuilderResumeText] = useState('');
+  const [builderResult, setBuilderResult] = useState<any>(null);
+
   const refreshUser = () => {
     const savedToken = localStorage.getItem('token') || token;
     if (savedToken) {
@@ -159,7 +165,20 @@ export default function App() {
             <Route path="/tracker" element={<ApplicationTracker />} />
             <Route path="/interview" element={<InterviewPrep />} />
             <Route path="/cover-letter" element={<CoverLetter />} />
-            <Route path="/builder" element={<ResumeBuilder />} />
+            <Route path="/builder" element={
+              <ResumeBuilder
+                company={builderCompany}
+                setCompany={setBuilderCompany}
+                role={builderRole}
+                setRole={setBuilderRole}
+                jobDescription={builderJobDescription}
+                setJobDescription={setBuilderJobDescription}
+                resumeText={builderResumeText}
+                setResumeText={setBuilderResumeText}
+                result={builderResult}
+                setResult={setBuilderResult}
+              />
+            } />
             <Route path="/analytics" element={<CareerAnalytics />} />
             <Route path="/settings" element={<Settings refreshUser={refreshUser} />} />
             <Route path="/ats-analyzer" element={
