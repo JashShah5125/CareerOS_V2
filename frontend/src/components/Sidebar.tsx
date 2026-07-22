@@ -42,6 +42,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
     { name: 'Job Matcher', path: '/matcher', icon: Briefcase },
     { name: 'Application Tracker', path: '/tracker', icon: Layers },
     { name: 'Interview Prep', path: '/interview', icon: MessageSquareCode },
+    { name: 'AI Cover Letter', path: '/cover-letter', icon: Wand2 },
     { name: 'Career Analytics', path: '/analytics', icon: LineChart },
     { name: 'Settings', path: '/settings', icon: SettingsIcon },
   ];
