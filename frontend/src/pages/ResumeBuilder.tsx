@@ -39,6 +39,15 @@ export default function ResumeBuilder({
   const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
 
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
+
   useEffect(() => {
     // Load previously tailored resumes
     resumeApi.listTailored()
@@ -49,7 +58,7 @@ export default function ResumeBuilder({
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!company || !role || !jobDescription) {
-      alert('Please fill out the Company, Role, and Job Description fields.');
+      showToast('Please fill out the Company, Role, and Job Description fields.', 'error');
       return;
     }
 
@@ -57,12 +66,11 @@ export default function ResumeBuilder({
     resumeApi.tailor({ company, role, jobDescription, resumeText })
       .then(res => {
         setResult(res);
-        setSuccessMsg('AI Tailored Resume Generated Successfully! (1 Credit Deducted)');
-        setTimeout(() => setSuccessMsg(''), 5000);
+        showToast('AI Tailored Resume Generated Successfully!', 'success');
       })
       .catch(err => {
         console.error(err);
-        alert(err.message || 'Resume tailoring failed.');
+        showToast(err.message || 'Resume tailoring failed.', 'error');
       })
       .finally(() => setLoading(false));
   };
@@ -77,14 +85,13 @@ export default function ResumeBuilder({
       content: result.content
     })
       .then(() => {
-        setSuccessMsg('Tailored resume saved to your profile!');
+        showToast('Tailored resume saved to your profile!', 'success');
         // Refresh saved list
         resumeApi.listTailored().then(res => setSavedResumes(res));
-        setTimeout(() => setSuccessMsg(''), 4000);
       })
       .catch(err => {
         console.error(err);
-        alert('Failed to save tailored resume.');
+        showToast('Failed to save tailored resume.', 'error');
       })
       .finally(() => setSaving(false));
   };
@@ -287,19 +294,19 @@ export default function ResumeBuilder({
     
     const nameRegex = /^[a-zA-Z\s]+$/;
     if (!fullName || !nameRegex.test(fullName)) {
-      alert('Validation Error: Name must contain only letters and spaces.');
+      showToast('Validation Error: Name must contain only letters and spaces.', 'error');
       return false;
     }
     
     if (!email || !email.includes('@')) {
-      alert('Validation Error: Email is compulsory and must contain @ symbol.');
+      showToast('Validation Error: Email must contain @ symbol.', 'error');
       return false;
     }
     
     const phoneClean = phone.trim();
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(phoneClean)) {
-      alert('Validation Error: Phone number must be exactly 10 digits and contain only numbers.');
+      showToast('Validation Error: Phone number must be exactly 10 digits and contain only numbers.', 'error');
       return false;
     }
     
@@ -329,10 +336,13 @@ export default function ResumeBuilder({
 
     if (field === 'phone') {
       const phoneClean = value.trim();
-      const phoneDigitsOnly = /^\d*$/;
-      if (!phoneDigitsOnly.test(phoneClean)) {
+      const hasNonDigits = /[^\d]/.test(phoneClean);
+      
+      if (phoneClean.length > 10) {
+        setPhoneError('Phone number must be exactly 10 digits.');
+      } else if (hasNonDigits) {
         setPhoneError('Phone number must contain only numbers.');
-      } else if (phoneClean.length !== 10) {
+      } else if (phoneClean.length > 0 && phoneClean.length < 10) {
         setPhoneError('Phone number must be exactly 10 digits.');
       } else {
         setPhoneError('');
@@ -626,6 +636,7 @@ export default function ResumeBuilder({
                     <label className="form-label" style={{ fontSize: '0.7rem' }}>Phone</label>
                     <input
                       type="text"
+                      maxLength={10}
                       value={result.content.personalInfo.phone}
                       onChange={e => updatePersonalInfo('phone', e.target.value)}
                       className="form-input"
@@ -750,7 +761,7 @@ export default function ResumeBuilder({
                       <button
                         type="button"
                         onClick={() => {
-                          const newBullets = [...exp.bullets, 'New tailored achievement bullet describing project duties...'];
+                          const newBullets = [...exp.bullets, ''];
                           updateExperience(idx, 'bullets', newBullets);
                         }}
                         className="btn btn-secondary"
@@ -906,6 +917,28 @@ export default function ResumeBuilder({
             </div>
           </div>
 
+        </div>
+      )}
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          backgroundColor: toast.type === 'error' ? '#fee2e2' : '#dcfce7',
+          border: `1px solid ${toast.type === 'error' ? '#ef4444' : '#22c55e'}`,
+          padding: '0.85rem 1.5rem',
+          borderRadius: '8px',
+          color: toast.type === 'error' ? '#b91c1c' : '#15803d',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.15), 0 4px 6px -4px rgba(0,0,0,0.1)',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {toast.type === 'error' ? <Trash2 size={16} /> : <CheckCircle2 size={16} />}
+          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{toast.message}</span>
         </div>
       )}
     </div>
