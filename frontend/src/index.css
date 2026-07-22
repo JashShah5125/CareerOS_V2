@@ -502,3 +502,27 @@ p {
   color: var(--text-primary);
   margin-bottom: 1.5rem;
 }
+
+/* AI Resume Builder Responsive Styles */
+.builder-workspace {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.builder-preview-panel {
+  position: sticky;
+  top: 1.5rem;
+}
+
+@media (max-width: 968px) {
+  .builder-workspace {
+    grid-template-columns: 1fr;
+  }
+  
+  .builder-preview-panel {
+    position: static;
+    margin-top: 1.5rem;
+  }
+}

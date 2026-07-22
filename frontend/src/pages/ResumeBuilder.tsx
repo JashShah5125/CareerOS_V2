@@ -662,7 +662,7 @@ export default function ResumeBuilder({
         </Card>
       ) : (
         /* Dynamic Split-Screen Editor & Preview Workspace */
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="builder-workspace">
           
           {/* Left Panel: Real-time Editor Fields */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -867,7 +867,7 @@ export default function ResumeBuilder({
           </div>
 
           {/* Right Panel: Live Print Preview Sheet */}
-          <div style={{ position: 'sticky', top: '1.5rem' }}>
+          <div className="builder-preview-panel">
             <span style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
               Live Print-Ready ATS Document Preview (Georgia Font):
             </span>
