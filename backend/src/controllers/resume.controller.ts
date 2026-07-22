@@ -447,17 +447,26 @@ export const tailorResume = async (req: Request, res: Response) => {
         You are a professional resume writer and career coach.
         Generate a tailored, professional, ATS-optimized resume in JSON format.
         You must match the candidate's Base Resume details against the target Job Description (JD).
+        Extract the candidate's real Full Name, Email, Phone number, Location, LinkedIn, and GitHub links from the provided Base Resume Text.
+        If any contact detail (like phone or linkedin) is completely missing from the Base Resume Text, fallback to:
+        - Full Name: "${firstName} ${lastName}"
+        - Email: "${email}"
+        - Phone: "+91 9999999999" (or extract if present)
+        - Location: "Mumbai, India"
+        - LinkedIn: "linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}"
+        - GitHub: "github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}"
+
         Rewrite summaries, work experience bullet points, and projects to highlight achievements that align with key keywords in the JD.
         Use strong action verbs and quantify achievements (e.g. increase metrics, save time, build features).
         You must respond in strict JSON format. Output raw JSON matching this exact structure:
         {
           "personalInfo": {
-            "fullName": "${firstName} ${lastName}",
-            "email": "${email}",
-            "phone": "+91 9999999999",
-            "location": "Mumbai, India",
-            "linkedin": "linkedin.com/in/jash-shah",
-            "github": "github.com/jashshah"
+            "fullName": "Extracted Full Name or fallback",
+            "email": "Extracted Email or fallback",
+            "phone": "Extracted Phone or fallback",
+            "location": "Extracted Location or fallback",
+            "linkedin": "Extracted LinkedIn link or fallback",
+            "github": "Extracted GitHub link or fallback"
           },
           "summary": "Tailored profile summary...",
           "skills": ["Skill 1", "Skill 2"],
@@ -502,15 +511,32 @@ export const tailorResume = async (req: Request, res: Response) => {
     } catch (err: any) {
       console.warn('[Resume Controller] AI tailoring failed. Constructing fallback dynamic resume:', err);
       
+      const emailMatch = baseResumeText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      const phoneMatch = baseResumeText.match(/(?:\+91[\s-]?)?(\d{4}[\s-]?\d{3}[\s-]?\d{3})|(?:\+91[\s-]?)?(\d{5}[\s-]?\d{5})|(?:\+91[\s-]?)?(\d{10})/);
+      const liMatch = baseResumeText.match(/(?:linkedin\.com\/in\/[a-zA-Z0-9\-_]+)/i);
+      const ghMatch = baseResumeText.match(/(?:github\.com\/[a-zA-Z0-9\-_]+)/i);
+
+      let extractedPhone = '+91 9876543210';
+      if (phoneMatch) {
+        const cleaned = phoneMatch[0].replace(/\D/g, '');
+        if (cleaned.length === 12 && cleaned.startsWith('91')) {
+          extractedPhone = cleaned.substring(2);
+        } else if (cleaned.length === 10) {
+          extractedPhone = cleaned;
+        } else {
+          extractedPhone = cleaned.substring(0, 10);
+        }
+      }
+
       // Fallback structured data
       tailoredData = {
         personalInfo: {
           fullName: `${firstName} ${lastName}`,
-          email: email,
-          phone: '+91 9876543210',
+          email: emailMatch ? emailMatch[0] : email,
+          phone: extractedPhone,
           location: 'Mumbai, India',
-          linkedin: `linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
-          github: `github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`
+          linkedin: liMatch ? liMatch[0] : `linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
+          github: ghMatch ? ghMatch[0] : `github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`
         },
         summary: `Highly motivated ${headline} specializing in building software solutions. Passionate about contributing to high-performance development teams at ${company} as a ${role}.`,
         skills: ['React', 'TypeScript', 'Node.js', 'Express.js', 'MongoDB', 'SQL', 'Git', 'RESTful APIs'],

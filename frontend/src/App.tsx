@@ -78,6 +78,7 @@ export default function App() {
   const [builderJobDescription, setBuilderJobDescription] = useState('');
   const [builderResumeText, setBuilderResumeText] = useState('');
   const [builderResult, setBuilderResult] = useState<any>(null);
+  const [builderUploadedFileName, setBuilderUploadedFileName] = useState('');
 
   const refreshUser = () => {
     const savedToken = localStorage.getItem('token') || token;
@@ -177,6 +178,8 @@ export default function App() {
                 setResumeText={setBuilderResumeText}
                 result={builderResult}
                 setResult={setBuilderResult}
+                uploadedFileName={builderUploadedFileName}
+                setUploadedFileName={setBuilderUploadedFileName}
               />
             } />
             <Route path="/analytics" element={<CareerAnalytics />} />

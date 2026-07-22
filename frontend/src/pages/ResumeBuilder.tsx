@@ -15,6 +15,8 @@ interface ResumeBuilderProps {
   setResumeText: (val: string) => void;
   result: TailoredResumeResult | null;
   setResult: (val: TailoredResumeResult | null) => void;
+  uploadedFileName: string;
+  setUploadedFileName: (val: string) => void;
 }
 
 export default function ResumeBuilder({
@@ -27,7 +29,9 @@ export default function ResumeBuilder({
   resumeText,
   setResumeText,
   result,
-  setResult
+  setResult,
+  uploadedFileName,
+  setUploadedFileName
 }: ResumeBuilderProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -46,6 +50,35 @@ export default function ResumeBuilder({
     setTimeout(() => {
       setToast(null);
     }, 4500);
+  };
+
+  const [parsingFile, setParsingFile] = useState(false);
+
+  const handleFileUploaderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setParsingFile(true);
+      
+      resumeApi.parseFile(file)
+        .then(res => {
+          setResumeText(res.text); // Set the resumeText state for backend tailoring
+          setUploadedFileName(file.name);
+          showToast(`Successfully parsed and loaded ${file.name}`, 'success');
+        })
+        .catch(err => {
+          console.error(err);
+          showToast('Failed to parse the selected file. Please verify it is a valid PDF or DOCX.', 'error');
+        })
+        .finally(() => {
+          setParsingFile(false);
+        });
+    }
+  };
+
+  const handleRemoveUploadedFile = () => {
+    setResumeText('');
+    setUploadedFileName('');
+    showToast('Uploaded resume cleared.', 'success');
   };
 
   useEffect(() => {
@@ -544,14 +577,62 @@ export default function ResumeBuilder({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Current Base Resume Text (Optional)</label>
-              <textarea
-                value={resumeText}
-                onChange={e => setResumeText(e.target.value)}
-                className="form-input form-textarea"
-                placeholder="Paste your raw resume text. If left blank, CareerOS will extract details from your profile summary automatically."
-                style={{ height: '140px' }}
-              />
+              <label className="form-label">Upload Current Resume File (.pdf, .docx, .txt)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.txt"
+                    onChange={handleFileUploaderChange}
+                    style={{ display: 'none' }}
+                    id="builder-file-upload"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('builder-file-upload')?.click()}
+                    className="btn btn-secondary"
+                    style={{ flexGrow: 1, height: '44px', gap: '0.5rem', justifyContent: 'center' }}
+                    disabled={parsingFile}
+                  >
+                    {parsingFile ? (
+                      <>
+                        <span className="spin-animation" style={{ display: 'inline-block' }}>⚙️</span>
+                        <span>Parsing Document & Extracting Details...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileText size={16} />
+                        <span>{uploadedFileName ? `Replace: ${uploadedFileName}` : 'Choose Resume File'}</span>
+                      </>
+                    )}
+                  </button>
+                  {uploadedFileName && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveUploadedFile}
+                      className="btn btn-danger"
+                      style={{ height: '44px', minWidth: '44px', padding: 0 }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+                {uploadedFileName && !parsingFile && (
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--success, #22c55e)',
+                    backgroundColor: 'var(--success-light, #dcfce7)',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: 'var(--radius-sm, 4px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.25rem'
+                  }}>
+                    <strong style={{ display: 'block' }}>✓ Loaded: {uploadedFileName}</strong>
+                    <span>Automatically parsed text for tailoring. Contact details will be auto-filled in the editor.</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <button

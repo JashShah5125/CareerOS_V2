@@ -160,6 +160,23 @@ export const resumeApi = {
   deleteTailored: (id: string) => request<{ message: string }>(`/api/resume/tailor/${id}`, {
     method: 'DELETE'
   }),
+  parseFile: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('token');
+    return fetch('/api/ats/parse-file', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      }
+    }).then(res => {
+      if (!res.ok) {
+        throw new Error('Failed to parse resume file.');
+      }
+      return res.json() as Promise<{ text: string; size: number; mimeType: string }>;
+    });
+  },
   // exact root paths requested
   analyze: (file: File) => {
     const formData = new FormData();
