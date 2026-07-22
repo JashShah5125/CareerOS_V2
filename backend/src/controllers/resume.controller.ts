@@ -450,10 +450,11 @@ export const tailorResume = async (req: Request, res: Response) => {
         Extract the candidate's real Full Name, Email, Phone number, Location, LinkedIn, and GitHub links from the provided Base Resume Text.
 
         CRITICAL RULE FOR PERSONAL INFO:
-        If a detail (like name, email, phone, location, linkedin, or github) is missing from the Base Resume Text, you must output the default fallback value specified below.
-        DO NOT write descriptive text, explanation comments, or placeholders like 'Not Provided, fallback to default'. Output ONLY the clean values.
+        If any contact detail (like name, email, phone, location, linkedin, or github) is NOT present in the provided Base Resume Text, you must output an empty string "" for that field.
+        DO NOT make up fake values, and DO NOT output generic placeholders or explanations. Output ONLY clean values or "".
+        Only use user profile defaults if the entire Base Resume Text is completely empty or missing.
         
-        Default Fallback Values:
+        Profile Default Fallbacks (used only if base resume text is empty):
         - fullName: "${firstName} ${lastName}"
         - email: "${email}"
         - phone: "+91 9999999999"
@@ -466,12 +467,12 @@ export const tailorResume = async (req: Request, res: Response) => {
         You must respond in strict JSON format. Output raw JSON matching this exact structure:
         {
           "personalInfo": {
-            "fullName": "Candidate full name, or fallback: ${firstName} ${lastName}",
-            "email": "Candidate email, or fallback: ${email}",
-            "phone": "Candidate phone, or fallback: +91 9999999999",
-            "location": "Candidate location, or fallback: Mumbai, India",
-            "linkedin": "Candidate linkedin URL, or fallback: linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}",
-            "github": "Candidate github URL, or fallback: github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}"
+            "fullName": "Candidate name, or fallback if base resume empty: ${firstName} ${lastName}",
+            "email": "Candidate email, or fallback if base resume empty: ${email}",
+            "phone": "Candidate phone, or fallback if base resume empty: +91 9999999999",
+            "location": "Candidate location, or fallback if base resume empty: Mumbai, India",
+            "linkedin": "Candidate linkedin URL, or fallback if base resume empty: linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}",
+            "github": "Candidate github URL, or fallback if base resume empty: github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}"
           },
           "summary": "Tailored profile summary...",
           "skills": ["Skill 1", "Skill 2"],
@@ -537,11 +538,11 @@ export const tailorResume = async (req: Request, res: Response) => {
       tailoredData = {
         personalInfo: {
           fullName: `${firstName} ${lastName}`,
-          email: emailMatch ? emailMatch[0] : email,
-          phone: extractedPhone,
-          location: 'Mumbai, India',
-          linkedin: liMatch ? liMatch[0] : `linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
-          github: ghMatch ? ghMatch[0] : `github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`
+          email: emailMatch ? emailMatch[0] : '',
+          phone: phoneMatch ? extractedPhone : '',
+          location: '',
+          linkedin: liMatch ? liMatch[0] : '',
+          github: ghMatch ? ghMatch[0] : ''
         },
         summary: `Highly motivated ${headline} specializing in building software solutions. Passionate about contributing to high-performance development teams at ${company} as a ${role}.`,
         skills: ['React', 'TypeScript', 'Node.js', 'Express.js', 'MongoDB', 'SQL', 'Git', 'RESTful APIs'],
