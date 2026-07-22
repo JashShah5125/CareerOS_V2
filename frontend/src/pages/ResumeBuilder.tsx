@@ -337,9 +337,13 @@ export default function ResumeBuilder({
     }
     
     const phoneClean = phone.trim();
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(phoneClean)) {
-      showToast('Validation Error: Phone number must be exactly 10 digits and contain only numbers.', 'error');
+    const hasNonDigits = /[^\d]/.test(phoneClean);
+    if (hasNonDigits) {
+      showToast('Validation Error: Phone number must contain only numbers.', 'error');
+      return false;
+    }
+    if (phoneClean.length !== 10) {
+      showToast('Validation Error: Phone number must be exactly 10 digits.', 'error');
       return false;
     }
     
@@ -371,11 +375,9 @@ export default function ResumeBuilder({
       const phoneClean = value.trim();
       const hasNonDigits = /[^\d]/.test(phoneClean);
       
-      if (phoneClean.length > 10) {
-        setPhoneError('Phone number must be exactly 10 digits.');
-      } else if (hasNonDigits) {
+      if (hasNonDigits) {
         setPhoneError('Phone number must contain only numbers.');
-      } else if (phoneClean.length > 0 && phoneClean.length < 10) {
+      } else if (phoneClean.length > 0 && phoneClean.length !== 10) {
         setPhoneError('Phone number must be exactly 10 digits.');
       } else {
         setPhoneError('');
@@ -602,7 +604,7 @@ export default function ResumeBuilder({
                     ) : (
                       <>
                         <FileText size={16} />
-                        <span>{uploadedFileName ? `Replace: ${uploadedFileName}` : 'Choose Resume File'}</span>
+                        <span>{uploadedFileName ? uploadedFileName : 'Choose Resume File'}</span>
                       </>
                     )}
                   </button>
@@ -624,12 +626,9 @@ export default function ResumeBuilder({
                     backgroundColor: 'var(--success-light, #dcfce7)',
                     padding: '0.5rem 0.75rem',
                     borderRadius: 'var(--radius-sm, 4px)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.25rem'
+                    fontWeight: 600
                   }}>
-                    <strong style={{ display: 'block' }}>✓ Loaded: {uploadedFileName}</strong>
-                    <span>Automatically parsed text for tailoring. Contact details will be auto-filled in the editor.</span>
+                    ✓ Loaded: {uploadedFileName}
                   </div>
                 )}
               </div>
@@ -717,7 +716,6 @@ export default function ResumeBuilder({
                     <label className="form-label" style={{ fontSize: '0.7rem' }}>Phone</label>
                     <input
                       type="text"
-                      maxLength={10}
                       value={result.content.personalInfo.phone}
                       onChange={e => updatePersonalInfo('phone', e.target.value)}
                       className="form-input"
