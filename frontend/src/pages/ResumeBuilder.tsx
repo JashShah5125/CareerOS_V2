@@ -337,12 +337,19 @@ export default function ResumeBuilder({
     }
     
     const phoneClean = phone.trim();
-    const hasNonDigits = /[^\d]/.test(phoneClean);
+    const allowedClean = phoneClean.replace(/[\s\+\-\(\)]/g, '');
+    const hasNonDigits = /[^\d]/.test(allowedClean);
     if (hasNonDigits) {
       showToast('Validation Error: Phone number must contain only numbers.', 'error');
       return false;
     }
-    if (phoneClean.length !== 10) {
+    
+    let coreDigits = allowedClean;
+    if (coreDigits.length === 12 && coreDigits.startsWith('91')) {
+      coreDigits = coreDigits.substring(2);
+    }
+    
+    if (coreDigits.length !== 10) {
       showToast('Validation Error: Phone number must be exactly 10 digits.', 'error');
       return false;
     }
@@ -373,11 +380,17 @@ export default function ResumeBuilder({
 
     if (field === 'phone') {
       const phoneClean = value.trim();
-      const hasNonDigits = /[^\d]/.test(phoneClean);
+      const allowedClean = phoneClean.replace(/[\s\+\-\(\)]/g, '');
+      const hasNonDigits = /[^\d]/.test(allowedClean);
       
+      let coreDigits = allowedClean;
+      if (coreDigits.length === 12 && coreDigits.startsWith('91')) {
+        coreDigits = coreDigits.substring(2);
+      }
+
       if (hasNonDigits) {
         setPhoneError('Phone number must contain only numbers.');
-      } else if (phoneClean.length > 0 && phoneClean.length !== 10) {
+      } else if (coreDigits.length > 0 && coreDigits.length !== 10) {
         setPhoneError('Phone number must be exactly 10 digits.');
       } else {
         setPhoneError('');
