@@ -44,6 +44,7 @@ export default function ResumeBuilder({
   const [phoneError, setPhoneError] = useState('');
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -131,12 +132,7 @@ export default function ResumeBuilder({
 
   const handleDeleteSaved = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this saved resume?')) return;
-    resumeApi.deleteTailored(id)
-      .then(() => {
-        setSavedResumes(prev => prev.filter(r => r.id !== id));
-      })
-      .catch(err => console.error(err));
+    setDeleteConfirmId(id);
   };
 
   // Compile and Download PDF with professional A4 print formatting rules
@@ -1031,6 +1027,66 @@ export default function ResumeBuilder({
         }}>
           {toast.type === 'error' ? <Trash2 size={16} /> : <CheckCircle2 size={16} />}
           <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{toast.message}</span>
+        </div>
+      )}
+
+      {deleteConfirmId && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'var(--bg-card, #1e1e38)',
+            border: '1px solid var(--border, #3b3b5c)',
+            padding: '1.5rem',
+            borderRadius: '12px',
+            maxWidth: '400px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)',
+            animation: 'scaleIn 0.2s ease-out'
+          }}>
+            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Confirm Deletion</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              Are you sure you want to delete this saved resume? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="btn btn-secondary"
+                style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const id = deleteConfirmId;
+                  setDeleteConfirmId(null);
+                  resumeApi.deleteTailored(id)
+                    .then(() => {
+                      setSavedResumes(prev => prev.filter(r => r.id !== id));
+                      showToast('Saved resume deleted successfully.', 'success');
+                    })
+                    .catch(err => {
+                      console.error(err);
+                      showToast('Failed to delete resume.', 'error');
+                    });
+                }}
+                className="btn btn-danger"
+                style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
