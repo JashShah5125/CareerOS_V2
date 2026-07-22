@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { resumeApi } from '../api';
 import {
   MessageSquareCode,
@@ -54,12 +55,22 @@ export default function InterviewPrep() {
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  const location = useLocation();
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
     }, 4500);
   };
+
+  useEffect(() => {
+    if (location.state) {
+      const { role: passedRole, company: passedCompany } = location.state as { role?: string; company?: string };
+      if (passedRole) setRole(passedRole);
+      if (passedCompany) setCompany(passedCompany);
+    }
+  }, [location.state]);
 
   const loadHistory = () => {
     resumeApi.getInterviewHistory()

@@ -80,7 +80,8 @@ export default function Dashboard() {
         id: 'rec-prep',
         title: `Prepare for ${nextInterview.company} Interview`,
         desc: `You have an interview scheduled for the ${nextInterview.role} role. Run a mock prep session now to review feedback.`,
-        link: '/interview'
+        link: '/interview',
+        state: { company: nextInterview.company, role: nextInterview.role }
       });
     }
 
@@ -90,7 +91,8 @@ export default function Dashboard() {
         id: 'rec-tailor',
         title: `Tailor Resume for ${unoptimizedApp.company}`,
         desc: `Optimize your keywords and bullet points specifically for the ${unoptimizedApp.role} description to increase your callback rate.`,
-        link: '/tailor'
+        link: '/builder',
+        state: { company: unoptimizedApp.company, role: unoptimizedApp.role }
       });
     }
 
@@ -214,6 +216,7 @@ export default function Dashboard() {
                     </p>
                     <Link
                       to={rec.link}
+                      state={rec.state}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',

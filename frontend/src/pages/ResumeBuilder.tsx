@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { resumeApi, TailoredResumeResult } from '../api';
 import Card from '../components/Card';
 import { Sparkles, Download, Save, Plus, Trash2, ArrowLeft, FileText, CheckCircle2 } from 'lucide-react';
@@ -42,6 +43,16 @@ export default function ResumeBuilder({
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state) {
+      const { role: passedRole, company: passedCompany } = location.state as { role?: string; company?: string };
+      if (passedRole) setRole(passedRole);
+      if (passedCompany) setCompany(passedCompany);
+    }
+  }, [location.state, setRole, setCompany]);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
