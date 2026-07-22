@@ -28,6 +28,15 @@ export default function JobMatcher({
   const [parsingFile, setParsingFile] = useState(false);
   const navigate = useNavigate();
 
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -35,9 +44,10 @@ export default function JobMatcher({
       atsApi.parseFile(file)
         .then(res => {
           setResumeText(res.text);
+          showToast(`Successfully loaded and parsed ${file.name}`, 'success');
         })
         .catch(err => {
-          alert(err.message || 'Failed to extract text from file.');
+          showToast(err.message || 'Failed to extract text from file.', 'error');
         })
         .finally(() => setParsingFile(false));
     }
@@ -45,7 +55,7 @@ export default function JobMatcher({
 
   const handleMatch = () => {
     if (!jobDescription.trim() || !resumeText.trim()) {
-      alert('Please provide both your resume and the target job description.');
+      showToast('Please provide both your resume and the target job description.', 'error');
       return;
     }
 
@@ -54,10 +64,11 @@ export default function JobMatcher({
       .then(res => {
         setResult(res);
         if (refreshUser) refreshUser();
+        showToast('Job matching analysis complete!', 'success');
       })
       .catch(err => {
         console.error(err);
-        alert('Job matching analysis failed.');
+        showToast('Job matching analysis failed.', 'error');
       })
       .finally(() => setLoading(false));
   };
@@ -270,6 +281,28 @@ export default function JobMatcher({
               </Card>
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          backgroundColor: toast.type === 'error' ? '#fee2e2' : '#dcfce7',
+          border: `1px solid ${toast.type === 'error' ? '#ef4444' : '#22c55e'}`,
+          padding: '0.85rem 1.5rem',
+          borderRadius: '8px',
+          color: toast.type === 'error' ? '#b91c1c' : '#15803d',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.15), 0 4px 6px -4px rgba(0,0,0,0.1)',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{toast.message}</span>
         </div>
       )}
     </div>

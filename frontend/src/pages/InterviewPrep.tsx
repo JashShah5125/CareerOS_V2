@@ -11,7 +11,9 @@ import {
   UserCheck,
   CheckCircle,
   FileCode,
-  History
+  History,
+  AlertTriangle,
+  CheckCircle2
 } from 'lucide-react';
 import Card from '../components/Card';
 import MetricBar from '../components/MetricBar';
@@ -49,6 +51,15 @@ export default function InterviewPrep() {
 
   const [history, setHistory] = useState<any[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
 
   const loadHistory = () => {
     resumeApi.getInterviewHistory()
@@ -100,7 +111,7 @@ export default function InterviewPrep() {
       })
       .catch(err => {
         console.error(err);
-        alert('Could not load past practice session.');
+        showToast('Could not load past practice session.', 'error');
       })
       .finally(() => setLoading(false));
   };
@@ -116,10 +127,11 @@ export default function InterviewPrep() {
         setQuestions(res.questions);
         setActiveSessionId(res.id);
         loadHistory();
+        showToast('Practice questions generated successfully!', 'success');
       })
       .catch(err => {
         console.error(err);
-        alert('Could not generate questions.');
+        showToast('Could not generate questions.', 'error');
       })
       .finally(() => setLoading(false));
   };
@@ -127,7 +139,7 @@ export default function InterviewPrep() {
   const handleEvaluate = (question: Question) => {
     const userAnswer = answers[question.id];
     if (!userAnswer || !userAnswer.trim()) {
-      alert('Please type in an answer first before submitting for AI feedback.');
+      showToast('Please type in an answer first before submitting for AI feedback.', 'error');
       return;
     }
 
@@ -144,10 +156,11 @@ export default function InterviewPrep() {
           [question.id]: res
         }));
         loadHistory();
+        showToast('AI Feedback generated successfully!', 'success');
       })
       .catch(err => {
         console.error(err);
-        alert('Feedback evaluation failed.');
+        showToast('Feedback evaluation failed.', 'error');
       })
       .finally(() => setSubmitting(null));
   };
@@ -385,6 +398,28 @@ export default function InterviewPrep() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          backgroundColor: toast.type === 'error' ? '#fee2e2' : '#dcfce7',
+          border: `1px solid ${toast.type === 'error' ? '#ef4444' : '#22c55e'}`,
+          padding: '0.85rem 1.5rem',
+          borderRadius: '8px',
+          color: toast.type === 'error' ? '#b91c1c' : '#15803d',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.15), 0 4px 6px -4px rgba(0,0,0,0.1)',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {toast.type === 'error' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
+          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{toast.message}</span>
         </div>
       )}
     </div>

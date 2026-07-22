@@ -2,13 +2,22 @@ import { useEffect, useState } from 'react';
 import { trackerApi, ApplicationCard, jobApi, JobDescriptionRecord } from '../api';
 import Kanban from '../components/Kanban';
 import Card from '../components/Card';
-import { Plus, X, Briefcase, Calendar, DollarSign, FileText } from 'lucide-react';
+import { Plus, X, Briefcase, Calendar, DollarSign, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function ApplicationTracker() {
   const [apps, setApps] = useState<ApplicationCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeCard, setActiveCard] = useState<Partial<ApplicationCard> | null>(null);
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
 
   const [jobs, setJobs] = useState<JobDescriptionRecord[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>('general');
@@ -102,7 +111,7 @@ export default function ApplicationTracker() {
   const handleJdSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newJd.title || !newJd.company || !newJd.description) {
-      alert('Please fill in all fields.');
+      showToast('Please fill in all fields.', 'error');
       return;
     }
 
@@ -454,6 +463,28 @@ export default function ApplicationTracker() {
           }
         }
       `}</style>
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          backgroundColor: toast.type === 'error' ? '#fee2e2' : '#dcfce7',
+          border: `1px solid ${toast.type === 'error' ? '#ef4444' : '#22c55e'}`,
+          padding: '0.85rem 1.5rem',
+          borderRadius: '8px',
+          color: toast.type === 'error' ? '#b91c1c' : '#15803d',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.15), 0 4px 6px -4px rgba(0,0,0,0.1)',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{toast.message}</span>
+        </div>
+      )}
     </div>
   );
 }

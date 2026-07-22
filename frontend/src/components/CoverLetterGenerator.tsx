@@ -12,10 +12,19 @@ export default function CoverLetterGenerator() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CoverLetterResult | null>(null);
 
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
+
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!company || !role) {
-      alert('Please fill out the Company and Role fields.');
+      showToast('Please fill out the Company and Role fields.', 'error');
       return;
     }
 
@@ -23,10 +32,11 @@ export default function CoverLetterGenerator() {
     resumeApi.generateCoverLetter({ company, role, jobDescription })
       .then(res => {
         setResult(res);
+        showToast('Cover letter generated successfully!', 'success');
       })
       .catch(err => {
         console.error(err);
-        alert('Cover letter generation failed.');
+        showToast('Cover letter generation failed.', 'error');
       })
       .finally(() => setLoading(false));
   };
@@ -183,6 +193,28 @@ export default function CoverLetterGenerator() {
               onDownloadPdf={handleDownload}
             />
           </Card>
+        </div>
+      )}
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          backgroundColor: toast.type === 'error' ? '#fee2e2' : '#dcfce7',
+          border: `1px solid ${toast.type === 'error' ? '#ef4444' : '#22c55e'}`,
+          padding: '0.85rem 1.5rem',
+          borderRadius: '8px',
+          color: toast.type === 'error' ? '#b91c1c' : '#15803d',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.15), 0 4px 6px -4px rgba(0,0,0,0.1)',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {toast.type === 'error' ? <AlertCircle size={16} /> : <Check size={16} />}
+          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{toast.message}</span>
         </div>
       )}
     </div>

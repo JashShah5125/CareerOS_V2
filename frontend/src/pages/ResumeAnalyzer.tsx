@@ -10,6 +10,15 @@ export default function ResumeAnalyzer() {
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(true);
@@ -38,7 +47,7 @@ export default function ResumeAnalyzer() {
     const extension = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase();
     
     if (!validExtensions.includes(extension)) {
-      alert('Please upload a PDF or DOCX file.');
+      showToast('Please upload a PDF or DOCX file.', 'error');
       return;
     }
 
@@ -49,10 +58,13 @@ export default function ResumeAnalyzer() {
   const triggerAnalysis = (fileObj: File) => {
     setLoading(true);
     resumeApi.analyze(fileObj)
-      .then(res => setAnalysis(res))
+      .then(res => {
+        setAnalysis(res);
+        showToast('Resume analysis complete!', 'success');
+      })
       .catch(err => {
         console.error(err);
-        alert('Resume analysis failed.');
+        showToast('Resume analysis failed.', 'error');
       })
       .finally(() => setLoading(false));
   };
@@ -381,6 +393,28 @@ export default function ResumeAnalyzer() {
           100% { transform: rotate(300deg); }
         }
       `}</style>
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          backgroundColor: toast.type === 'error' ? '#fee2e2' : '#dcfce7',
+          border: `1px solid ${toast.type === 'error' ? '#ef4444' : '#22c55e'}`,
+          padding: '0.85rem 1.5rem',
+          borderRadius: '8px',
+          color: toast.type === 'error' ? '#b91c1c' : '#15803d',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.15), 0 4px 6px -4px rgba(0,0,0,0.1)',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {toast.type === 'error' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
+          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{toast.message}</span>
+        </div>
+      )}
     </div>
   );
 }
