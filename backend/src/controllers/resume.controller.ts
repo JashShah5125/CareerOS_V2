@@ -448,25 +448,30 @@ export const tailorResume = async (req: Request, res: Response) => {
         Generate a tailored, professional, ATS-optimized resume in JSON format.
         You must match the candidate's Base Resume details against the target Job Description (JD).
         Extract the candidate's real Full Name, Email, Phone number, Location, LinkedIn, and GitHub links from the provided Base Resume Text.
-        If any contact detail (like phone or linkedin) is completely missing from the Base Resume Text, fallback to:
-        - Full Name: "${firstName} ${lastName}"
-        - Email: "${email}"
-        - Phone: "+91 9999999999" (or extract if present)
-        - Location: "Mumbai, India"
-        - LinkedIn: "linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}"
-        - GitHub: "github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}"
+
+        CRITICAL RULE FOR PERSONAL INFO:
+        If a detail (like name, email, phone, location, linkedin, or github) is missing from the Base Resume Text, you must output the default fallback value specified below.
+        DO NOT write descriptive text, explanation comments, or placeholders like 'Not Provided, fallback to default'. Output ONLY the clean values.
+        
+        Default Fallback Values:
+        - fullName: "${firstName} ${lastName}"
+        - email: "${email}"
+        - phone: "+91 9999999999"
+        - location: "Mumbai, India"
+        - linkedin: "linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}"
+        - github: "github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}"
 
         Rewrite summaries, work experience bullet points, and projects to highlight achievements that align with key keywords in the JD.
         Use strong action verbs and quantify achievements (e.g. increase metrics, save time, build features).
         You must respond in strict JSON format. Output raw JSON matching this exact structure:
         {
           "personalInfo": {
-            "fullName": "Extracted Full Name or fallback",
-            "email": "Extracted Email or fallback",
-            "phone": "Extracted Phone or fallback",
-            "location": "Extracted Location or fallback",
-            "linkedin": "Extracted LinkedIn link or fallback",
-            "github": "Extracted GitHub link or fallback"
+            "fullName": "Candidate full name, or fallback: ${firstName} ${lastName}",
+            "email": "Candidate email, or fallback: ${email}",
+            "phone": "Candidate phone, or fallback: +91 9999999999",
+            "location": "Candidate location, or fallback: Mumbai, India",
+            "linkedin": "Candidate linkedin URL, or fallback: linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}",
+            "github": "Candidate github URL, or fallback: github.com/${firstName.toLowerCase()}${lastName.toLowerCase()}"
           },
           "summary": "Tailored profile summary...",
           "skills": ["Skill 1", "Skill 2"],
