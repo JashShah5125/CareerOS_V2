@@ -11,6 +11,7 @@ import Settings from './pages/Settings';
 import Auth from './pages/Auth';
 import AtsAnalyzer from './pages/AtsAnalyzer';
 import CoverLetter from './pages/CoverLetter';
+import ResumeBuilder from './pages/ResumeBuilder';
 import { UserProfile, authApi } from './api';
 
 function PageTitleUpdater() {
@@ -39,6 +40,9 @@ function PageTitleUpdater() {
         break;
       case '/cover-letter':
         title = 'Cover Letter Generator | CareerOS';
+        break;
+      case '/builder':
+        title = 'AI Resume Builder | CareerOS';
         break;
       case '/analytics':
         title = 'Career Analytics | CareerOS';
@@ -155,6 +159,7 @@ export default function App() {
             <Route path="/tracker" element={<ApplicationTracker />} />
             <Route path="/interview" element={<InterviewPrep />} />
             <Route path="/cover-letter" element={<CoverLetter />} />
+            <Route path="/builder" element={<ResumeBuilder />} />
             <Route path="/analytics" element={<CareerAnalytics />} />
             <Route path="/settings" element={<Settings refreshUser={refreshUser} />} />
             <Route path="/ats-analyzer" element={

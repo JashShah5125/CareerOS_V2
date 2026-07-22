@@ -112,8 +112,54 @@ export interface CoverLetterResult {
   downloadUrl: string;
 }
 
+export interface TailoredResumeResult {
+  id?: string;
+  company: string;
+  role: string;
+  content: {
+    personalInfo: {
+      fullName: string;
+      email: string;
+      phone: string;
+      location: string;
+      linkedin: string;
+      github: string;
+    };
+    summary: string;
+    skills: string[];
+    experience: Array<{
+      role: string;
+      company: string;
+      duration: string;
+      bullets: string[];
+    }>;
+    projects: Array<{
+      title: string;
+      technologies: string;
+      bullets: string[];
+    }>;
+    education: Array<{
+      degree: string;
+      school: string;
+      duration: string;
+    }>;
+  };
+}
+
 export const resumeApi = {
   getLatest: () => request<ResumeAnalysis | null>('/api/resume/latest'),
+  tailor: (data: { company: string; role: string; jobDescription: string; resumeText?: string }) => request<TailoredResumeResult>('/api/resume/tailor', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+  saveTailored: (data: { company: string; role: string; content: any }) => request<any>('/api/resume/tailor/save', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+  listTailored: () => request<any[]>('/api/resume/tailor/list'),
+  deleteTailored: (id: string) => request<{ message: string }>(`/api/resume/tailor/${id}`, {
+    method: 'DELETE'
+  }),
   // exact root paths requested
   analyze: (file: File) => {
     const formData = new FormData();

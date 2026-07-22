@@ -39,6 +39,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Resume Analyzer', path: '/analyzer', icon: FileSearch },
     { name: 'ATS Analyzer', path: '/ats-analyzer', icon: FileCheck },
+    { name: 'AI Resume Builder', path: '/builder', icon: Sparkles },
     { name: 'Job Matcher', path: '/matcher', icon: Briefcase },
     { name: 'Application Tracker', path: '/tracker', icon: Layers },
     { name: 'Interview Prep', path: '/interview', icon: MessageSquareCode },

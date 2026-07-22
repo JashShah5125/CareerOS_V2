@@ -23,6 +23,7 @@ model User {
   aiChats           AiChat[]
   payments          Payment[]
   subscriptions     Subscription[]
+  tailoredResumes   TailoredResume[]
 }
 
 model Profile {
@@ -172,4 +173,15 @@ model AtsCache {
   inputHash  String   @unique
   resultJson Json
   createdAt  DateTime @default(now())
+}
+
+model TailoredResume {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   String
+  role      String
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { login, register, googleLogin, forgotPassword, getProfile, updateProfile, addCredits } from '../controllers/auth.controller';
-import { analyzeResume, calculateAtsScore, getLatestResume } from '../controllers/resume.controller';
+import { analyzeResume, calculateAtsScore, getLatestResume, tailorResume, saveTailoredResume, listTailoredResumes, deleteTailoredResume } from '../controllers/resume.controller';
 import { analyzeJob, getJobs, createJob, deleteJob } from '../controllers/job.controller';
 import { generateCoverLetter } from '../controllers/coverletter.controller';
 import { generateInterviewQuestions, submitAnswerFeedback, getInterviewHistory, getInterviewSessionDetail, saveInterviewAnswers } from '../controllers/interview.controller';
@@ -35,6 +35,10 @@ router.post('/api/auth/add-credits', addCredits);
 router.post('/api/resume/analyze', upload.single('file'), analyzeResume);
 router.post('/api/resume/calculate-ats', calculateAtsScore);
 router.get('/api/resume/latest', getLatestResume);
+router.post('/api/resume/tailor', tailorResume);
+router.post('/api/resume/tailor/save', saveTailoredResume);
+router.get('/api/resume/tailor/list', listTailoredResumes);
+router.delete('/api/resume/tailor/:id', deleteTailoredResume);
 router.post('/api/ats/analyze', upload.single('file'), analyzeAtsCustom);
 router.post('/api/ats/parse-file', upload.single('file'), async (req, res) => {
   let buffer: Buffer | undefined;
