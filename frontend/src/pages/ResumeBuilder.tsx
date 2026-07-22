@@ -475,7 +475,7 @@ export default function ResumeBuilder({
       )}
 
       {/* Main Mode Selection Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="builder-header" style={{ marginBottom: '1.5rem' }}>
         <div>
           <h1>AI Resume Builder</h1>
           <p>Align and optimize your resume keywords dynamically for a specific job application.</p>
