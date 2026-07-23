@@ -46,21 +46,7 @@ export default function ResumeBuilder({
 
   const [selectedTemplate, setSelectedTemplate] = useState<'academic' | 'modern'>('academic');
 
-  const [personalExpanded, setPersonalExpanded] = useState(true);
-  const [summaryExpanded, setSummaryExpanded] = useState(true);
-  const [skillsExpanded, setSkillsExpanded] = useState(true);
-  const [experienceExpanded, setExperienceExpanded] = useState(true);
 
-  const renderCollapseButton = (isExpanded: boolean, setExpanded: (v: boolean) => void) => (
-    <button
-      type="button"
-      onClick={() => setExpanded(!isExpanded)}
-      className="btn btn-secondary"
-      style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', height: '24px', lineHeight: 1 }}
-    >
-      {isExpanded ? 'Collapse' : 'Expand'}
-    </button>
-  );
 
   const location = useLocation();
 
@@ -777,207 +763,184 @@ export default function ResumeBuilder({
             </div>
 
             {/* 1. Personal Info Editor */}
-            <Card
-              title="1. Personal Info"
-              subtitle="Your candidate identification details"
-              headerAction={renderCollapseButton(personalExpanded, setPersonalExpanded)}
-            >
-              {personalExpanded && (
-                <>
-                  <div className="grid-2">
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.7rem' }}>Full Name</label>
-                      <input
-                        type="text"
-                        value={result.content.personalInfo.fullName}
-                        onChange={e => updatePersonalInfo('fullName', e.target.value)}
-                        className="form-input"
-                        style={{ borderColor: nameError ? 'var(--danger)' : 'var(--border)' }}
-                      />
-                      {nameError && <span style={{ color: 'var(--danger)', fontSize: '0.65rem', display: 'block', marginTop: '0.25rem' }}>{nameError}</span>}
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.7rem' }}>Email</label>
-                      <input
-                        type="email"
-                        value={result.content.personalInfo.email}
-                        onChange={e => updatePersonalInfo('email', e.target.value)}
-                        className="form-input"
-                        style={{ borderColor: emailError ? 'var(--danger)' : 'var(--border)' }}
-                      />
-                      {emailError && <span style={{ color: 'var(--danger)', fontSize: '0.65rem', display: 'block', marginTop: '0.25rem' }}>{emailError}</span>}
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.7rem' }}>Phone</label>
-                      <input
-                        type="text"
-                        value={result.content.personalInfo.phone}
-                        onChange={e => updatePersonalInfo('phone', e.target.value)}
-                        className="form-input"
-                        style={{ borderColor: phoneError ? 'var(--danger)' : 'var(--border)' }}
-                      />
-                      {phoneError && <span style={{ color: 'var(--danger)', fontSize: '0.65rem', display: 'block', marginTop: '0.25rem' }}>{phoneError}</span>}
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.7rem' }}>Location</label>
-                    <input
-                      type="text"
-                      value={result.content.personalInfo.location}
-                      onChange={e => updatePersonalInfo('location', e.target.value)}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="grid-2" style={{ marginTop: '0.5rem' }}>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.7rem' }}>LinkedIn</label>
-                      <input
-                        type="text"
-                        value={result.content.personalInfo.linkedin}
-                        onChange={e => updatePersonalInfo('linkedin', e.target.value)}
-                        className="form-input"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.7rem' }}>GitHub</label>
-                      <input
-                        type="text"
-                        value={result.content.personalInfo.github}
-                        onChange={e => updatePersonalInfo('github', e.target.value)}
-                        className="form-input"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+            {/* 1. Personal Info Editor */}
+            <Card title="1. Personal Info" subtitle="Your candidate identification details">
+              <div className="grid-2">
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.7rem' }}>Full Name</label>
+                  <input
+                    type="text"
+                    value={result.content.personalInfo.fullName}
+                    onChange={e => updatePersonalInfo('fullName', e.target.value)}
+                    className="form-input"
+                    style={{ borderColor: nameError ? 'var(--danger)' : 'var(--border)' }}
+                  />
+                  {nameError && <span style={{ color: 'var(--danger)', fontSize: '0.65rem', display: 'block', marginTop: '0.25rem' }}>{nameError}</span>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.7rem' }}>Email</label>
+                  <input
+                    type="email"
+                    value={result.content.personalInfo.email}
+                    onChange={e => updatePersonalInfo('email', e.target.value)}
+                    className="form-input"
+                    style={{ borderColor: emailError ? 'var(--danger)' : 'var(--border)' }}
+                  />
+                  {emailError && <span style={{ color: 'var(--danger)', fontSize: '0.65rem', display: 'block', marginTop: '0.25rem' }}>{emailError}</span>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.7rem' }}>Phone</label>
+                  <input
+                    type="text"
+                    value={result.content.personalInfo.phone}
+                    onChange={e => updatePersonalInfo('phone', e.target.value)}
+                    className="form-input"
+                    style={{ borderColor: phoneError ? 'var(--danger)' : 'var(--border)' }}
+                  />
+                  {phoneError && <span style={{ color: 'var(--danger)', fontSize: '0.65rem', display: 'block', marginTop: '0.25rem' }}>{phoneError}</span>}
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '0.7rem' }}>Location</label>
+                <input
+                  type="text"
+                  value={result.content.personalInfo.location}
+                  onChange={e => updatePersonalInfo('location', e.target.value)}
+                  className="form-input"
+                />
+              </div>
+              <div className="grid-2" style={{ marginTop: '0.5rem' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.7rem' }}>LinkedIn</label>
+                  <input
+                    type="text"
+                    value={result.content.personalInfo.linkedin}
+                    onChange={e => updatePersonalInfo('linkedin', e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.7rem' }}>GitHub</label>
+                  <input
+                    type="text"
+                    value={result.content.personalInfo.github}
+                    onChange={e => updatePersonalInfo('github', e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+              </div>
             </Card>
 
             {/* 2. Professional Summary Editor */}
-            <Card
-              title="2. Professional Summary"
-              subtitle="Elevator pitch aligning to the JD keywords"
-              headerAction={renderCollapseButton(summaryExpanded, setSummaryExpanded)}
-            >
-              {summaryExpanded && (
-                <div className="form-group">
-                  <textarea
-                    value={result.content.summary}
-                    onChange={e => updateSummary(e.target.value)}
-                    className="form-input form-textarea"
-                    style={{ height: '110px' }}
-                  />
-                </div>
-              )}
+            {/* 2. Professional Summary Editor */}
+            <Card title="2. Professional Summary" subtitle="Elevator pitch aligning to the JD keywords">
+              <div className="form-group">
+                <textarea
+                  value={result.content.summary}
+                  onChange={e => updateSummary(e.target.value)}
+                  className="form-input form-textarea"
+                  style={{ height: '110px' }}
+                />
+              </div>
             </Card>
 
             {/* 3. Technical Skills Editor */}
-            <Card
-              title="3. Technical Skills"
-              subtitle="Comma-separated competencies for search scanners"
-              headerAction={renderCollapseButton(skillsExpanded, setSkillsExpanded)}
-            >
-              {skillsExpanded && (
-                <div className="form-group">
-                  <textarea
-                    value={result.content.skills.join(', ')}
-                    onChange={e => updateSkills(e.target.value)}
-                    className="form-input form-textarea"
-                    style={{ height: '70px' }}
-                    placeholder="React, TypeScript, Node.js..."
-                  />
-                </div>
-              )}
+            {/* 3. Technical Skills Editor */}
+            <Card title="3. Technical Skills" subtitle="Comma-separated competencies for search scanners">
+              <div className="form-group">
+                <textarea
+                  value={result.content.skills.join(', ')}
+                  onChange={e => updateSkills(e.target.value)}
+                  className="form-input form-textarea"
+                  style={{ height: '70px' }}
+                  placeholder="React, TypeScript, Node.js..."
+                />
+              </div>
             </Card>
 
             {/* 4. Experience Editor */}
-            <Card
-              title="4. Professional Experience"
-              subtitle="Quantified bullet points matching job tasks"
-              headerAction={renderCollapseButton(experienceExpanded, setExperienceExpanded)}
-            >
-              {experienceExpanded && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  {result.content.experience.map((exp, idx) => (
-                    <div key={idx} style={{ borderBottom: idx < result.content.experience.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: '1rem' }}>
-                      <div className="grid-3">
-                        <div className="form-group">
-                          <label className="form-label" style={{ fontSize: '0.7rem' }}>Role</label>
-                          <input
-                            type="text"
-                            value={exp.role}
-                            onChange={e => updateExperience(idx, 'role', e.target.value)}
-                            className="form-input"
-                            style={{ fontSize: '0.75rem' }}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label" style={{ fontSize: '0.7rem' }}>Company</label>
-                          <input
-                            type="text"
-                            value={exp.company}
-                            onChange={e => updateExperience(idx, 'company', e.target.value)}
-                            className="form-input"
-                            style={{ fontSize: '0.75rem' }}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label" style={{ fontSize: '0.7rem' }}>Duration</label>
-                          <input
-                            type="text"
-                            value={exp.duration}
-                            onChange={e => updateExperience(idx, 'duration', e.target.value)}
-                            className="form-input"
-                            style={{ fontSize: '0.75rem' }}
-                            placeholder="e.g. 2021 - Present"
-                          />
-                        </div>
+            <Card title="4. Professional Experience" subtitle="Quantified bullet points matching job tasks">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {result.content.experience.map((exp, idx) => (
+                  <div key={idx} style={{ borderBottom: idx < result.content.experience.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: '1rem' }}>
+                    <div className="grid-3">
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Role</label>
+                        <input
+                          type="text"
+                          value={exp.role}
+                          onChange={e => updateExperience(idx, 'role', e.target.value)}
+                          className="form-input"
+                          style={{ fontSize: '0.75rem' }}
+                        />
                       </div>
-                      
-                      {/* Experience Bullets Editor */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.5rem' }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 600 }}>Quantified Achievement Bullets:</span>
-                        {exp.bullets.map((bullet, bulletIdx) => (
-                          <div key={bulletIdx} style={{ display: 'flex', gap: '0.25rem' }}>
-                            <textarea
-                              value={bullet}
-                              onChange={e => {
-                                const newBullets = [...exp.bullets];
-                                newBullets[bulletIdx] = e.target.value;
-                                updateExperience(idx, 'bullets', newBullets);
-                              }}
-                              className="form-input"
-                              style={{ fontSize: '0.75rem', height: '54px', padding: '0.25rem', lineHeight: '1.3' }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newBullets = exp.bullets.filter((_, bIdx) => bIdx !== bulletIdx);
-                                updateExperience(idx, 'bullets', newBullets);
-                              }}
-                              className="btn btn-secondary"
-                              style={{ height: '32px', minWidth: '32px', padding: 0 }}
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newBullets = [...exp.bullets, ''];
-                            updateExperience(idx, 'bullets', newBullets);
-                          }}
-                          className="btn btn-secondary"
-                          style={{ fontSize: '0.65rem', padding: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem', justifyContent: 'center' }}
-                        >
-                          <Plus size={12} />
-                          <span>Add Bullet Point</span>
-                        </button>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Company</label>
+                        <input
+                          type="text"
+                          value={exp.company}
+                          onChange={e => updateExperience(idx, 'company', e.target.value)}
+                          className="form-input"
+                          style={{ fontSize: '0.75rem' }}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Duration</label>
+                        <input
+                          type="text"
+                          value={exp.duration}
+                          onChange={e => updateExperience(idx, 'duration', e.target.value)}
+                          className="form-input"
+                          style={{ fontSize: '0.75rem' }}
+                          placeholder="e.g. 2021 - Present"
+                        />
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    
+                    {/* Experience Bullets Editor */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.5rem' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 600 }}>Quantified Achievement Bullets:</span>
+                      {exp.bullets.map((bullet, bulletIdx) => (
+                        <div key={bulletIdx} style={{ display: 'flex', gap: '0.25rem' }}>
+                          <textarea
+                            value={bullet}
+                            onChange={e => {
+                              const newBullets = [...exp.bullets];
+                              newBullets[bulletIdx] = e.target.value;
+                              updateExperience(idx, 'bullets', newBullets);
+                            }}
+                            className="form-input"
+                            style={{ fontSize: '0.75rem', height: '54px', padding: '0.25rem', lineHeight: '1.3' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newBullets = exp.bullets.filter((_, bIdx) => bIdx !== bulletIdx);
+                              updateExperience(idx, 'bullets', newBullets);
+                            }}
+                            className="btn btn-secondary"
+                            style={{ height: '32px', minWidth: '32px', padding: 0 }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newBullets = [...exp.bullets, ''];
+                          updateExperience(idx, 'bullets', newBullets);
+                        }}
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.65rem', padding: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem', justifyContent: 'center' }}
+                      >
+                        <Plus size={12} />
+                        <span>Add Bullet Point</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Card>
 
           </div>
