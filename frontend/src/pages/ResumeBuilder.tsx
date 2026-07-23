@@ -940,8 +940,13 @@ export default function ResumeBuilder({
 
           </div>
 
-          {/* Right Panel: Live Print Preview Sheet */}
-          <div className="builder-preview-panel">
+          <div className="builder-preview-panel" style={{
+            position: 'sticky',
+            top: '1.5rem',
+            maxHeight: 'calc(100vh - 4rem)',
+            overflowY: 'auto',
+            paddingRight: '0.35rem'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '1rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 Live Print-Ready ATS Document Preview:
