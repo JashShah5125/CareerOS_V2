@@ -100,6 +100,10 @@ body {
   transition: background 0.25s ease, color 0.25s ease;
 }
 
+textarea {
+  resize: none !important;
+}
+
 /* Scrollbar styles */
 ::-webkit-scrollbar {
   width: 6px;
@@ -316,7 +320,6 @@ p {
 }
 
 .form-textarea {
-  resize: vertical;
   min-height: 120px;
 }
 
