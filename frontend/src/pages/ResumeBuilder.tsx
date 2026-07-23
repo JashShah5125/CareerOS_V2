@@ -500,6 +500,48 @@ export default function ResumeBuilder({
     });
   };
 
+  const handleAddExperience = () => {
+    if (!result) return;
+    const updated = [
+      ...result.content.experience,
+      { role: '', company: '', duration: '', bullets: [''] }
+    ];
+    setResult({
+      ...result,
+      content: { ...result.content, experience: updated }
+    });
+  };
+
+  const handleRemoveExperience = (index: number) => {
+    if (!result) return;
+    const updated = result.content.experience.filter((_, idx) => idx !== index);
+    setResult({
+      ...result,
+      content: { ...result.content, experience: updated }
+    });
+  };
+
+  const handleAddEducation = () => {
+    if (!result) return;
+    const updated = [
+      ...result.content.education,
+      { degree: '', school: '', duration: '' }
+    ];
+    setResult({
+      ...result,
+      content: { ...result.content, education: updated }
+    });
+  };
+
+  const handleRemoveEducation = (index: number) => {
+    if (!result) return;
+    const updated = result.content.education.filter((_, idx) => idx !== index);
+    setResult({
+      ...result,
+      content: { ...result.content, education: updated }
+    });
+  };
+
   const sectionHeaderStyle = selectedTemplate === 'modern' ? {
     fontWeight: 'bold',
     borderBottom: '1px solid #ddd',
@@ -862,7 +904,22 @@ export default function ResumeBuilder({
             <Card title="4. Professional Experience" subtitle="Quantified bullet points matching job tasks">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {result.content.experience.map((exp, idx) => (
-                  <div key={idx} style={{ borderBottom: idx < result.content.experience.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: '1rem' }}>
+                  <div key={idx} style={{ borderBottom: idx < result.content.experience.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: '1.5rem', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent)' }}>Role / Job #{idx + 1}</span>
+                      {result.content.experience.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExperience(idx)}
+                          className="btn btn-danger"
+                          style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem', height: '24px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        >
+                          <Trash2 size={12} />
+                          <span>Remove Role</span>
+                        </button>
+                      )}
+                    </div>
+
                     <div className="grid-3">
                       <div className="form-group">
                         <label className="form-label" style={{ fontSize: '0.7rem' }}>Role</label>
@@ -940,6 +997,86 @@ export default function ResumeBuilder({
                     </div>
                   </div>
                 ))}
+
+                <button
+                  type="button"
+                  onClick={handleAddExperience}
+                  className="btn btn-secondary"
+                  style={{ width: '100%', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}
+                >
+                  <Plus size={14} />
+                  <span>Add New Role / Job</span>
+                </button>
+              </div>
+            </Card>
+
+            {/* 5. Education Editor */}
+            <Card title="5. Education" subtitle="Your academic degrees and credentials">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {result.content.education.map((edu, idx) => (
+                  <div key={idx} style={{ borderBottom: idx < result.content.education.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: '1.5rem', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent)' }}>Education #{idx + 1}</span>
+                      {result.content.education.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEducation(idx)}
+                          className="btn btn-danger"
+                          style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem', height: '24px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        >
+                          <Trash2 size={12} />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="grid-3">
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Degree / Field of Study</label>
+                        <input
+                          type="text"
+                          value={edu.degree}
+                          onChange={e => updateEducation(idx, 'degree', e.target.value)}
+                          className="form-input"
+                          style={{ fontSize: '0.75rem' }}
+                          placeholder="e.g. B.Tech Computer Science"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>School / University</label>
+                        <input
+                          type="text"
+                          value={edu.school}
+                          onChange={e => updateEducation(idx, 'school', e.target.value)}
+                          className="form-input"
+                          style={{ fontSize: '0.75rem' }}
+                          placeholder="e.g. Stanford University"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Duration</label>
+                        <input
+                          type="text"
+                          value={edu.duration}
+                          onChange={e => updateEducation(idx, 'duration', e.target.value)}
+                          className="form-input"
+                          style={{ fontSize: '0.75rem' }}
+                          placeholder="e.g. 2018 - 2022"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                <button
+                  type="button"
+                  onClick={handleAddEducation}
+                  className="btn btn-secondary"
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}
+                >
+                  <Plus size={14} />
+                  <span>Add Education</span>
+                </button>
               </div>
             </Card>
 
