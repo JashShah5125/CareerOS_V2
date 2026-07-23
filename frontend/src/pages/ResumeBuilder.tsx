@@ -46,6 +46,13 @@ export default function ResumeBuilder({
 
   const [selectedTemplate, setSelectedTemplate] = useState<'academic' | 'modern'>('academic');
 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
 
 
   const location = useLocation();
@@ -514,12 +521,18 @@ export default function ResumeBuilder({
 
   const handleRemoveExperience = (index: number) => {
     if (!result) return;
-    const confirmDelete = window.confirm("Are you sure you want to remove this role? This will delete all its bullet points.");
-    if (!confirmDelete) return;
-    const updated = result.content.experience.filter((_, idx) => idx !== index);
-    setResult({
-      ...result,
-      content: { ...result.content, experience: updated }
+    setConfirmModal({
+      isOpen: true,
+      title: "Remove Role / Job",
+      message: "Are you sure you want to remove this role? This will delete all its bullet points.",
+      onConfirm: () => {
+        const updated = result.content.experience.filter((_, idx) => idx !== index);
+        setResult({
+          ...result,
+          content: { ...result.content, experience: updated }
+        });
+        setConfirmModal(null);
+      }
     });
   };
 
@@ -537,12 +550,18 @@ export default function ResumeBuilder({
 
   const handleRemoveEducation = (index: number) => {
     if (!result) return;
-    const confirmDelete = window.confirm("Are you sure you want to remove this education entry?");
-    if (!confirmDelete) return;
-    const updated = result.content.education.filter((_, idx) => idx !== index);
-    setResult({
-      ...result,
-      content: { ...result.content, education: updated }
+    setConfirmModal({
+      isOpen: true,
+      title: "Remove Education Entry",
+      message: "Are you sure you want to remove this education entry?",
+      onConfirm: () => {
+        const updated = result.content.education.filter((_, idx) => idx !== index);
+        setResult({
+          ...result,
+          content: { ...result.content, education: updated }
+        });
+        setConfirmModal(null);
+      }
     });
   };
 
@@ -976,10 +995,16 @@ export default function ResumeBuilder({
                           <button
                             type="button"
                             onClick={() => {
-                              const confirmDelete = window.confirm("Are you sure you want to remove this bullet point?");
-                              if (!confirmDelete) return;
-                              const newBullets = exp.bullets.filter((_, bIdx) => bIdx !== bulletIdx);
-                              updateExperience(idx, 'bullets', newBullets);
+                              setConfirmModal({
+                                isOpen: true,
+                                title: "Remove Bullet Point",
+                                message: "Are you sure you want to remove this bullet point?",
+                                onConfirm: () => {
+                                  const newBullets = exp.bullets.filter((_, bIdx) => bIdx !== bulletIdx);
+                                  updateExperience(idx, 'bullets', newBullets);
+                                  setConfirmModal(null);
+                                }
+                              });
                             }}
                             className="btn btn-secondary"
                             style={{ height: '32px', minWidth: '32px', padding: 0 }}
@@ -1345,6 +1370,56 @@ export default function ResumeBuilder({
                 }}
                 className="btn btn-danger"
                 style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Action Confirmation Modal Overlay */}
+      {confirmModal && confirmModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000,
+        }}>
+          <div className="card" style={{
+            width: '90%',
+            maxWidth: '380px',
+            padding: '1.5rem',
+            backgroundColor: 'var(--bg-card, #121225)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            textAlign: 'center',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+          }}>
+            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {confirmModal.title}
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+              {confirmModal.message}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={() => setConfirmModal(null)}
+                className="btn btn-secondary"
+                style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem', flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                className="btn btn-danger"
+                style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem', flex: 1 }}
               >
                 Delete
               </button>
