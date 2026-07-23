@@ -41,8 +41,8 @@ interface Feedback {
 }
 
 export default function InterviewPrep() {
-  const [role, setRole] = useState('Frontend Engineer');
-  const [company, setCompany] = useState('Linear');
+  const [role, setRole] = useState('');
+  const [company, setCompany] = useState('');
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
