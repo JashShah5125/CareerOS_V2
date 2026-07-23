@@ -101,7 +101,7 @@ export default function AtsAnalyzer({
       .catch(err => console.error(err));
 
     // Pre-fill details from parsed result candidateDetails & jobDetails
-    // General Tracker Board is selected initially, so company and role are empty by default
+    // Personal Tracker Board is selected initially, so company and role are empty by default
     setTrackerFormData({
       jobId: null,
       candidateName: result.candidateDetails?.candidateName || '',
@@ -700,7 +700,7 @@ export default function AtsAnalyzer({
                       className="form-input"
                       required
                     >
-                      <option value="general">📁 General Tracker Board</option>
+                      <option value="general">📁 Personal Tracker Board</option>
                       {jobs.map(j => (
                         <option key={j.id} value={j.id}>💼 {j.company} - {j.title}</option>
                       ))}

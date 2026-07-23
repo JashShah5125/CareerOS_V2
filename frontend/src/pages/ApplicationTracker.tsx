@@ -170,7 +170,7 @@ export default function ApplicationTracker() {
             className="form-input"
             style={{ minWidth: '240px', height: '40px', padding: '0 0.5rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)' }}
           >
-            <option value="general">📁 General Tracker Board</option>
+            <option value="general">📁 Personal Tracker Board</option>
             {jobs.map(j => (
               <option key={j.id} value={j.id}>💼 {j.company} - {j.title}</option>
             ))}
