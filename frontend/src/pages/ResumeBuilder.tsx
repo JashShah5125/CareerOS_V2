@@ -858,7 +858,7 @@ export default function ResumeBuilder({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {result.content.experience.map((exp, idx) => (
                   <div key={idx} style={{ borderBottom: idx < result.content.experience.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: '1rem' }}>
-                    <div className="grid-2">
+                    <div className="grid-3">
                       <div className="form-group">
                         <label className="form-label" style={{ fontSize: '0.7rem' }}>Role</label>
                         <input
@@ -879,14 +879,18 @@ export default function ResumeBuilder({
                           style={{ fontSize: '0.75rem' }}
                         />
                       </div>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Duration</label>
+                        <input
+                          type="text"
+                          value={exp.duration}
+                          onChange={e => updateExperience(idx, 'duration', e.target.value)}
+                          className="form-input"
+                          style={{ fontSize: '0.75rem' }}
+                          placeholder="e.g. 2021 - Present"
+                        />
+                      </div>
                     </div>
-                    <input
-                      type="text"
-                      value={exp.duration}
-                      onChange={e => updateExperience(idx, 'duration', e.target.value)}
-                      className="form-input"
-                      style={{ fontSize: '0.75rem', marginTop: '0.5rem' }}
-                    />
                     
                     {/* Experience Bullets Editor */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.5rem' }}>
