@@ -30,6 +30,8 @@ export default function Settings({ refreshUser }: SettingsProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [successMsg, setSuccessMsg] = useState('');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileBackup, setProfileBackup] = useState<UserProfile | null>(null);
 
   // Custom business model simulator states
   const [activeTab, setActiveTab] = useState<'profile' | 'billing' | 'credits' | 'marketplace' | 'developer'>('profile');
@@ -101,11 +103,13 @@ export default function Settings({ refreshUser }: SettingsProps) {
           setProfile(res.user);
         }
         if (refreshUser) refreshUser();
+        setIsEditingProfile(false);
         setTimeout(() => setSuccessMsg(''), 3000);
       })
       .catch(err => {
         console.warn('[Settings Page] Could not persist profile update to DB, saving locally:', err);
         setSuccessMsg('Profile updated successfully (local workspace saved).');
+        setIsEditingProfile(false);
         setTimeout(() => setSuccessMsg(''), 3000);
       });
   };
@@ -440,6 +444,7 @@ export default function Settings({ refreshUser }: SettingsProps) {
                       <label className="form-label">First Name</label>
                       <input
                         type="text"
+                        disabled={!isEditingProfile}
                         value={profile.firstName || ''}
                         onChange={e => setProfile({ ...profile, firstName: e.target.value })}
                         className="form-input"
@@ -449,6 +454,7 @@ export default function Settings({ refreshUser }: SettingsProps) {
                       <label className="form-label">Last Name</label>
                       <input
                         type="text"
+                        disabled={!isEditingProfile}
                         value={profile.lastName || ''}
                         onChange={e => setProfile({ ...profile, lastName: e.target.value })}
                         className="form-input"
@@ -471,6 +477,7 @@ export default function Settings({ refreshUser }: SettingsProps) {
                     <label className="form-label">Professional Headline</label>
                     <input
                       type="text"
+                      disabled={!isEditingProfile}
                       value={profile.headline || ''}
                       onChange={e => setProfile({ ...profile, headline: e.target.value })}
                       className="form-input"
@@ -482,6 +489,7 @@ export default function Settings({ refreshUser }: SettingsProps) {
                     <label className="form-label">Target Role</label>
                     <input
                       type="text"
+                      disabled={!isEditingProfile}
                       value={profile.targetRole || ''}
                       onChange={e => setProfile({ ...profile, targetRole: e.target.value })}
                       className="form-input"
@@ -489,10 +497,37 @@ export default function Settings({ refreshUser }: SettingsProps) {
                     />
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                    <button type="submit" className="btn btn-primary">
-                      Save Changes
-                    </button>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+                    {!isEditingProfile ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileBackup(profile);
+                          setIsEditingProfile(true);
+                        }}
+                        className="btn btn-primary"
+                      >
+                        Edit Profile
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (profileBackup) {
+                              setProfile(profileBackup);
+                            }
+                            setIsEditingProfile(false);
+                          }}
+                          className="btn btn-secondary"
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" className="btn btn-primary">
+                          Save Changes
+                        </button>
+                      </>
+                    )}
                   </div>
                 </form>
               </Card>
