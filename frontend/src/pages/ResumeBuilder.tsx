@@ -514,6 +514,8 @@ export default function ResumeBuilder({
 
   const handleRemoveExperience = (index: number) => {
     if (!result) return;
+    const confirmDelete = window.confirm("Are you sure you want to remove this role? This will delete all its bullet points.");
+    if (!confirmDelete) return;
     const updated = result.content.experience.filter((_, idx) => idx !== index);
     setResult({
       ...result,
@@ -535,6 +537,8 @@ export default function ResumeBuilder({
 
   const handleRemoveEducation = (index: number) => {
     if (!result) return;
+    const confirmDelete = window.confirm("Are you sure you want to remove this education entry?");
+    if (!confirmDelete) return;
     const updated = result.content.education.filter((_, idx) => idx !== index);
     setResult({
       ...result,
@@ -972,6 +976,8 @@ export default function ResumeBuilder({
                           <button
                             type="button"
                             onClick={() => {
+                              const confirmDelete = window.confirm("Are you sure you want to remove this bullet point?");
+                              if (!confirmDelete) return;
                               const newBullets = exp.bullets.filter((_, bIdx) => bIdx !== bulletIdx);
                               updateExperience(idx, 'bullets', newBullets);
                             }}
