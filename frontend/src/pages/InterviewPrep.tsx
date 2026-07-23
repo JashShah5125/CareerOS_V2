@@ -182,7 +182,6 @@ export default function InterviewPrep() {
     <div>
       <header style={{ marginBottom: '2rem' }}>
         <h1>Interview Preparation</h1>
-        <p>Generate role-specific behavioral, technical, coding, or HR questions and receive immediate feedback metrics and model response recommendations.</p>
       </header>
 
       {questions.length === 0 ? (
