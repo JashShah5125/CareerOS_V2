@@ -1085,7 +1085,7 @@ export default function ResumeBuilder({
                         />
                       </div>
                       <div className="form-group">
-                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Duration</label>
+                        <label className="form-label" style={{ fontSize: '0.7rem' }}>Year</label>
                         <input
                           type="text"
                           value={edu.duration}
