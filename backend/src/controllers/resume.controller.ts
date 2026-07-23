@@ -447,7 +447,7 @@ export const tailorResume = async (req: Request, res: Response) => {
         You are a professional resume writer and career coach.
         Generate a tailored, professional, ATS-optimized resume in JSON format.
         You must match the candidate's Base Resume details against the target Job Description (JD).
-        Extract the candidate's real Full Name, Email, Phone number, Location, LinkedIn, and GitHub links from the provided Base Resume Text.
+        Extract the candidate's real Full Name, Email, Phone number, Location, LinkedIn, and GitHub links, as well as all Education history (degree, school/college/university name, and duration) from the provided Base Resume Text.
 
         CRITICAL RULE FOR PERSONAL INFO:
         If any contact detail (like name, email, phone, location, linkedin, or github) is NOT present in the provided Base Resume Text, you must output an empty string "" for that field.
@@ -499,9 +499,9 @@ export const tailorResume = async (req: Request, res: Response) => {
           ],
           "education": [
             {
-              "degree": "B.Tech in Computer Science",
-              "school": "University",
-              "duration": "2020 - 2024"
+              "degree": "Candidate's real degree/credential (e.g. B.Com or B.Tech CS) extracted from base resume text",
+              "school": "Candidate's real school/university name (e.g. Mumbai University) extracted from base resume text",
+              "duration": "Candidate's real study duration (e.g. 2020 - 2024) extracted from base resume text"
             }
           ]
         }
