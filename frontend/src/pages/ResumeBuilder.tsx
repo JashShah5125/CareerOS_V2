@@ -357,14 +357,22 @@ export default function ResumeBuilder({
     if (education && education.length > 0) {
       printSectionHeader('EDUCATION');
       education.forEach(edu => {
-        checkPageBounds(8);
+        checkPageBounds(10);
+        
+        // Line 1: Degree & Duration
         doc.setFont(fontName, 'bold');
         doc.setFontSize(10);
-        doc.text(`${edu.degree}  -  ${edu.school}`, margin, cursorY);
+        doc.text(edu.degree, margin, cursorY);
         
         const durWidth = doc.getTextWidth(edu.duration);
         doc.text(edu.duration, pageWidth - margin - durWidth, cursorY);
-        cursorY += 5;
+        cursorY += 4.5;
+        
+        // Line 2: School
+        doc.setFont(fontName, 'italic');
+        doc.setFontSize(9);
+        doc.text(edu.school, margin, cursorY);
+        cursorY += 6.5;
       });
     }
 
@@ -1279,11 +1287,16 @@ export default function ResumeBuilder({
                   <div style={sectionHeaderStyle}>
                     Education
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.35rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.35rem' }}>
                     {result.content.education.map((edu, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
-                        <span style={{ fontWeight: 'bold' }}>{edu.degree}  —  {edu.school}</span>
-                        <span style={{ fontWeight: 'bold' }}>{edu.duration}</span>
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
+                          <span style={{ fontWeight: 'bold' }}>{edu.degree}</span>
+                          <span style={{ fontWeight: 'bold' }}>{edu.duration}</span>
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: '#444444', fontStyle: 'italic' }}>
+                          {edu.school}
+                        </div>
                       </div>
                     ))}
                   </div>
