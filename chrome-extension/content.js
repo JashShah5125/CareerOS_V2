@@ -3,20 +3,30 @@
 // 1. If running on CareerOS App, sync auth credentials automatically
 if (window.location.hostname === 'localhost' || window.location.hostname.includes('career-copilot') || window.location.hostname.includes('vercel.app')) {
   const syncAuth = () => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    if (token) {
-      chrome.storage.local.set({ 
-        token, 
-        user: userStr ? JSON.parse(userStr) : null, 
-        origin: window.location.origin 
-      }, () => {
-        console.log('[CareerOS Clipper] Auth token and origin synchronized to extension storage.');
-      });
-    } else {
-      chrome.storage.local.remove(['token', 'user', 'origin'], () => {
-        console.log('[CareerOS Clipper] Auth token and origin cleared from extension storage.');
-      });
+    try {
+      // Prevent errors if the extension was updated/reloaded in the background
+      if (!chrome.runtime || !chrome.runtime.id) {
+        return;
+      }
+      const token = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
+      if (token) {
+        chrome.storage.local.set({ 
+          token, 
+          user: userStr ? JSON.parse(userStr) : null, 
+          origin: window.location.origin 
+        }, () => {
+          if (chrome.runtime.lastError) return;
+          console.log('[CareerOS Clipper] Auth token and origin synchronized to extension storage.');
+        });
+      } else {
+        chrome.storage.local.remove(['token', 'user', 'origin'], () => {
+          if (chrome.runtime.lastError) return;
+          console.log('[CareerOS Clipper] Auth token and origin cleared from extension storage.');
+        });
+      }
+    } catch (err) {
+      console.warn('[CareerOS Clipper] Storage sync skipped due to context reload:', err.message);
     }
   };
 
