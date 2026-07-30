@@ -27,96 +27,148 @@ document.addEventListener('DOMContentLoaded', async () => {
   let apiBase = DEFAULT_BACKEND_URL;
   let webBase = DEFAULT_FRONTEND_URL;
 
-  // 1. Fetch credentials from extension storage
-  chrome.storage.local.get(['token', 'user', 'origin'], async (result) => {
-    const token = result.token;
-    if (result.origin) {
-      webBase = result.origin;
-      if (result.origin.includes('vercel.app')) {
-        apiBase = result.origin; // Vercel routes are single origin serverless functions
-      } else {
-        apiBase = DEFAULT_BACKEND_URL;
+  const initExtension = () => {
+    // Fetch credentials from extension storage
+    chrome.storage.local.get(['token', 'user', 'origin'], async (result) => {
+      const token = result.token;
+      if (result.origin) {
+        webBase = result.origin;
+        if (result.origin.includes('vercel.app')) {
+          apiBase = result.origin; // Vercel routes are single origin serverless functions
+        } else {
+          apiBase = DEFAULT_BACKEND_URL;
+        }
       }
-    }
 
-    if (!token) {
-      // Show login required state
-      statusBadge.innerText = 'Disconnected';
-      statusBadge.className = 'badge badge-disconnected';
-      authWarning.classList.remove('hidden');
-      clipperPanel.classList.add('hidden');
+      if (!token) {
+        // Show login required state
+        statusBadge.innerText = 'Disconnected';
+        statusBadge.className = 'badge badge-disconnected';
+        authWarning.classList.remove('hidden');
+        clipperPanel.classList.add('hidden');
+        return;
+      }
+
+      // Set connection status
+      statusBadge.innerText = 'Connected';
+      statusBadge.className = 'badge badge-connected';
+      authWarning.classList.add('hidden');
+      clipperPanel.classList.remove('hidden');
+
+      // 2. Fetch target job boards from CareerOS backend
+      try {
+        const response = await fetch(`${apiBase}/api/jobs`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const boards = await response.json();
+          boards.forEach(board => {
+            const opt = document.createElement('option');
+            opt.value = board.id;
+            opt.innerText = `💼 ${board.company} - ${board.title}`;
+            selectBoard.appendChild(opt);
+          });
+        } else {
+          console.warn('Failed to load target boards from CareerOS.');
+        }
+      } catch (err) {
+        console.error('Error fetching tracker boards:', err);
+      }
+
+      // 3. Query active tab and check if it's a supported job board
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs.length === 0) return;
+        const activeTab = tabs[0];
+        activeTabUrl = activeTab.url || '';
+
+        const isSpecialScraper = activeTabUrl.includes('linkedin.com') || activeTabUrl.includes('naukri.com');
+        if (!isSpecialScraper) {
+          urlNotice.innerText = '💡 Pro-Tip: You can highlight/select any text on this page to automatically clip it as the Job Description!';
+          urlNotice.classList.remove('hidden');
+        } else {
+          urlNotice.classList.add('hidden');
+        }
+
+        // 4. Trigger scraping via content script messaging
+        chrome.tabs.sendMessage(activeTab.id, { action: 'scrapeJob' }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.log('[CareerOS Clipper] Messaging active tab: content script not loaded yet (refresh the page if needed).');
+            return;
+          }
+
+          if (response && response.success && response.data) {
+            const job = response.data;
+            inputCompany.value = job.company || '';
+            inputRole.value = job.role || '';
+            inputLocation.value = job.location || '';
+            inputSalary.value = job.salary || '';
+            
+            let notesText = '';
+            if (job.url) notesText += `Job URL: ${job.url}\n`;
+            if (job.location) notesText += `Location: ${job.location}\n`;
+            if (job.salary) notesText += `Salary Offer: ${job.salary}\n`;
+            if (job.description) {
+              notesText += `\n--- Job Description ---\n${job.description}`;
+            }
+            textareaNotes.value = notesText;
+          }
+        });
+      });
+    });
+  };
+
+  // 1. Query active tab and check if we are on the CareerOS App to sync credentials on-demand
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs.length === 0) {
+      initExtension();
       return;
     }
+    const activeTab = tabs[0];
+    const activeTabUrl = activeTab.url || '';
 
-    // Set connection status
-    statusBadge.innerText = 'Connected';
-    statusBadge.className = 'badge badge-connected';
-    authWarning.classList.add('hidden');
-    clipperPanel.classList.remove('hidden');
+    // Check if the current tab is the CareerOS App (local or vercel) to sync credentials
+    const isCareerOS = activeTabUrl.includes('localhost:3000') || activeTabUrl.includes('vercel.app');
 
-    // 2. Fetch target job boards from CareerOS backend
-    try {
-      const response = await fetch(`${apiBase}/api/jobs`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
+    if (isCareerOS) {
+      // Sync on demand by executing script in the active CareerOS tab
+      chrome.scripting.executeScript({
+        target: { tabId: activeTab.id },
+        func: () => {
+          return {
+            token: localStorage.getItem('token'),
+            user: localStorage.getItem('user'),
+            origin: window.location.origin
+          };
         }
-      });
-
-      if (response.ok) {
-        const boards = await response.json();
-        boards.forEach(board => {
-          const opt = document.createElement('option');
-          opt.value = board.id;
-          opt.innerText = `💼 ${board.company} - ${board.title}`;
-          selectBoard.appendChild(opt);
-        });
-      } else {
-        console.warn('Failed to load target boards from CareerOS.');
-      }
-    } catch (err) {
-      console.error('Error fetching tracker boards:', err);
-    }
-
-    // 3. Query active tab and check if it's a supported job board
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length === 0) return;
-      const activeTab = tabs[0];
-      activeTabUrl = activeTab.url || '';
-
-      const isSpecialScraper = activeTabUrl.includes('linkedin.com') || activeTabUrl.includes('naukri.com');
-      if (!isSpecialScraper) {
-        urlNotice.innerText = '💡 Pro-Tip: You can highlight/select any text on this page to automatically clip it as the Job Description!';
-        urlNotice.classList.remove('hidden');
-      } else {
-        urlNotice.classList.add('hidden');
-      }
-
-      // 4. Trigger scraping via content script messaging
-      chrome.tabs.sendMessage(activeTab.id, { action: 'scrapeJob' }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.log('[CareerOS Clipper] Messaging active tab: content script not loaded yet (refresh the page if needed).');
+      }, (results) => {
+        if (chrome.runtime.lastError || !results || !results[0]) {
+          initExtension();
           return;
         }
 
-        if (response && response.success && response.data) {
-          const job = response.data;
-          inputCompany.value = job.company || '';
-          inputRole.value = job.role || '';
-          inputLocation.value = job.location || '';
-          inputSalary.value = job.salary || '';
-          
-          let notesText = '';
-          if (job.url) notesText += `Job URL: ${job.url}\n`;
-          if (job.location) notesText += `Location: ${job.location}\n`;
-          if (job.salary) notesText += `Salary Offer: ${job.salary}\n`;
-          if (job.description) {
-            notesText += `\n--- Job Description ---\n${job.description}`;
-          }
-          textareaNotes.value = notesText;
+        const data = results[0].result;
+        if (data && data.token) {
+          chrome.storage.local.set({
+            token: data.token,
+            user: data.user ? JSON.parse(data.user) : null,
+            origin: data.origin
+          }, () => {
+            initExtension();
+          });
+        } else {
+          // If no token exists in the active CareerOS tab (logged out), clear storage
+          chrome.storage.local.remove(['token', 'user', 'origin'], () => {
+            initExtension();
+          });
         }
       });
-    });
+    } else {
+      initExtension();
+    }
   });
 
   // Handle open frontend app button click
