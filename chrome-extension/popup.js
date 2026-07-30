@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // 4. Trigger scraping via content script messaging
       chrome.tabs.sendMessage(activeTab.id, { action: 'scrapeJob' }, (response) => {
         if (chrome.runtime.lastError) {
-          console.warn('Content script not loaded or active on this page:', chrome.runtime.lastError.message);
+          console.log('[CareerOS Clipper] Messaging active tab: content script not loaded yet (refresh the page if needed).');
           return;
         }
 
