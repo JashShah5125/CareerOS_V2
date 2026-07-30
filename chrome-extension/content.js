@@ -105,20 +105,20 @@ function scrapeJobPage() {
     if (descEl) description = descEl.innerText.trim();
 
   } else if (url.includes('naukri.com')) {
-    // Selectors for Naukri job page
-    const titleEl = document.querySelector('h1.jd-header-title, .jd-header-title, h1');
+    // Selectors for Naukri and Naukri Campus job pages
+    const titleEl = document.querySelector('h1.jd-header-title, .jd-header-title, h1, [class*="job-title"], [class*="jobTitle"]');
     if (titleEl) role = titleEl.innerText.trim();
 
-    const companyEl = document.querySelector('.jd-header-comp-name a, .jd-header-comp-name, .about-company .comp-name');
+    const companyEl = document.querySelector('.jd-header-comp-name a, .jd-header-comp-name, .about-company .comp-name, [class*="companyName"], [class*="company-name"], [class*="company"]');
     if (companyEl) {
       // Naukri sometimes includes reviews counts or ratings, extract only first text node or trim ratings
       company = companyEl.innerText.split('\n')[0].trim();
     }
 
-    const locationEl = document.querySelector('.location span, .loc, .loc-icon + span');
+    const locationEl = document.querySelector('.location span, .loc, .loc-icon + span, [class*="location"], [class*="job-location"]');
     if (locationEl) location = locationEl.innerText.trim();
 
-    const descEl = document.querySelector('.job-desc, .jd-description, #jobDescription');
+    const descEl = document.querySelector('.job-desc, .jd-description, #jobDescription, .description, [class*="job-description"], [class*="description"]');
     if (descEl) description = descEl.innerText.trim();
 
     const salaryEl = document.querySelector('.salary span, .salary');
@@ -147,7 +147,29 @@ function scrapeJobPage() {
     description = selectedText;
   }
 
-  // If description is empty but user highlighted text, use highlighted text
+  // Universal Fallbacks for empty fields (in case specialized scrapers above failed)
+  // 1. Role Fallback
+  if (!role) {
+    const titleEl = document.querySelector('h1');
+    if (titleEl && titleEl.innerText.trim().length > 3) {
+      role = titleEl.innerText.trim();
+    } else {
+      role = document.title.split(' - ')[0].split(' | ')[0].trim();
+    }
+  }
+
+  // 2. Company Fallback
+  if (!company) {
+    const parts = hostname.split('.');
+    if (parts.length >= 2) {
+      const candidate = parts[parts.length - 2];
+      company = candidate.charAt(0).toUpperCase() + candidate.slice(1);
+    } else {
+      company = hostname;
+    }
+  }
+
+  // 3. Description Fallback
   if (!description && selectedText) {
     description = selectedText;
   }
