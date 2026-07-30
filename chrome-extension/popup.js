@@ -89,8 +89,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         chrome.tabs.sendMessage(activeTab.id, { action: 'scrapeJob' }, (response) => {
           if (chrome.runtime.lastError) {
             console.log('[CareerOS Clipper] Messaging active tab: content script not loaded yet (refresh the page if needed).');
-            urlNotice.innerText = '💡 Pro-Tip: If details are not auto-filled, highlight/select any text on the page to automatically clip it!';
-            urlNotice.classList.remove('hidden');
             return;
           }
 
@@ -101,18 +99,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             inputLocation.value = job.location || '';
             inputSalary.value = job.salary || '';
             
-            let notesText = '';
-            if (job.url) notesText += `Job URL: ${job.url}\n`;
-            if (job.location) notesText += `Location: ${job.location}\n`;
-            if (job.salary) notesText += `Salary Offer: ${job.salary}\n`;
-            if (job.description) {
-              notesText += `\n--- Job Description ---\n${job.description}`;
-              urlNotice.classList.add('hidden');
-            } else {
-              urlNotice.innerText = '💡 Pro-Tip: You can highlight/select any text on this page to automatically clip it as the Job Description!';
-              urlNotice.classList.remove('hidden');
-            }
-            textareaNotes.value = notesText;
+            // Populate ONLY the raw Job URL in the notes/description box
+            textareaNotes.value = job.url || '';
           }
         });
       });
