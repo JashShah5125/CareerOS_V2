@@ -76,7 +76,7 @@ function scrapeJobPage() {
     const locationEl = document.querySelector('.location span, .loc, .loc-icon + span, [class*="location"], [class*="job-location"]');
     if (locationEl) location = locationEl.innerText.trim();
 
-    const descEl = document.querySelector('.job-desc, .jd-description, #jobDescription, .description, [class*="job-description"], [class*="description"]');
+    const descEl = document.querySelector('.job-desc, .jd-description, #jobDescription, .description');
     if (descEl) description = descEl.innerText.trim();
 
     const salaryEl = document.querySelector('.salary span, .salary');
@@ -110,6 +110,17 @@ function scrapeJobPage() {
     const lower = company.toLowerCase();
     if (lower === 'naukri' || lower === 'naukricampus' || lower === 'naukri campus' || lower === 'linkedin') {
       company = '';
+    }
+  }
+
+  // Fail-safe: if the scraper parsed app download promo templates as description, clear it to let selection/highlight fallback run
+  if (description) {
+    const lowerDesc = description.toLowerCase();
+    if (lowerDesc.includes('get real-time job updates') || 
+        lowerDesc.includes('download our app') || 
+        lowerDesc.includes('real-time job updates on our app') ||
+        (lowerDesc.length < 100 && (lowerDesc.includes('play store') || lowerDesc.includes('app store')))) {
+      description = '';
     }
   }
 
