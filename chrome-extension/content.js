@@ -2,7 +2,7 @@
 
 
 
-// 2. Scraper engine for Job boards (LinkedIn, Naukri)
+// 2. Universal Scraper engine for job boards and career sites
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'scrapeJob') {
     try {

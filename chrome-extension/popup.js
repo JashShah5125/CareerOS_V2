@@ -79,24 +79,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error fetching tracker boards:', err);
       }
 
-      // 3. Query active tab and check if it's a supported job board
+      // 3. Query active tab to trigger scraping
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs.length === 0) return;
         const activeTab = tabs[0];
         activeTabUrl = activeTab.url || '';
 
-        const isSpecialScraper = activeTabUrl.includes('linkedin.com') || activeTabUrl.includes('naukri.com');
-        if (!isSpecialScraper) {
-          urlNotice.innerText = '💡 Pro-Tip: You can highlight/select any text on this page to automatically clip it as the Job Description!';
-          urlNotice.classList.remove('hidden');
-        } else {
-          urlNotice.classList.add('hidden');
-        }
-
         // 4. Trigger scraping via content script messaging
         chrome.tabs.sendMessage(activeTab.id, { action: 'scrapeJob' }, (response) => {
           if (chrome.runtime.lastError) {
             console.log('[CareerOS Clipper] Messaging active tab: content script not loaded yet (refresh the page if needed).');
+            urlNotice.innerText = '💡 Pro-Tip: If details are not auto-filled, highlight/select any text on the page to automatically clip it!';
+            urlNotice.classList.remove('hidden');
             return;
           }
 
@@ -113,6 +107,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (job.salary) notesText += `Salary Offer: ${job.salary}\n`;
             if (job.description) {
               notesText += `\n--- Job Description ---\n${job.description}`;
+              urlNotice.classList.add('hidden');
+            } else {
+              urlNotice.innerText = '💡 Pro-Tip: You can highlight/select any text on this page to automatically clip it as the Job Description!';
+              urlNotice.classList.remove('hidden');
             }
             textareaNotes.value = notesText;
           }
