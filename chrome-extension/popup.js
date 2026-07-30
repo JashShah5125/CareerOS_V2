@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         role: inputRole.value.trim(),
         salary: inputSalary.value.trim(),
         jobId: jobId,
-        status: 'applied', // Default column for clipped jobs
+        status: 'APPLIED', // Default column for clipped jobs
         notes: textareaNotes.value.trim()
       };
 

@@ -119,7 +119,9 @@ export const createApplication = async (req: Request, res: Response) => {
         company,
         role,
         salary: salary || '',
-        status: (status as ApplicationStatus) || ApplicationStatus.APPLIED,
+        status: status
+          ? (status.toUpperCase() as ApplicationStatus)
+          : ApplicationStatus.APPLIED,
         deadline: deadline ? new Date(deadline) : null,
         applicationDate: applicationDate ? new Date(applicationDate) : new Date(),
         interviewDate: interviewDate ? new Date(interviewDate) : null,
@@ -172,6 +174,7 @@ export const updateApplication = async (req: Request, res: Response) => {
     if (updates.candidateName !== undefined) dbUpdates.candidateName = updates.candidateName || '';
     if (updates.candidateEmail !== undefined) dbUpdates.candidateEmail = updates.candidateEmail || '';
     if (updates.candidatePhone !== undefined) dbUpdates.candidatePhone = updates.candidatePhone || '';
+    if (updates.status !== undefined) dbUpdates.status = updates.status.toUpperCase();
 
     const updated = await prisma.application.update({
       where: { id },
