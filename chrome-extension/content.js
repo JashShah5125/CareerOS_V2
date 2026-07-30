@@ -33,15 +33,22 @@ if (window.location.hostname === 'localhost' || window.location.hostname.include
   // Sync initially
   syncAuth();
 
-  // Watch for logins / logouts
-  window.addEventListener('storage', (e) => {
+  // Watch for logins / logouts (self-cleans if context is invalidated)
+  const handleStorageChange = (e) => {
     if (e.key === 'token' || e.key === 'user') {
-      syncAuth();
+      try {
+        if (chrome.runtime && chrome.runtime.id) {
+          syncAuth();
+        } else {
+          window.removeEventListener('storage', handleStorageChange);
+        }
+      } catch (err) {
+        window.removeEventListener('storage', handleStorageChange);
+      }
     }
-  });
+  };
 
-  // Periodically check local storage as backup
-  setInterval(syncAuth, 5000);
+  window.addEventListener('storage', handleStorageChange);
 }
 
 // 2. Scraper engine for Job boards (LinkedIn, Naukri)
