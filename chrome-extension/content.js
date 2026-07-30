@@ -67,7 +67,7 @@ function scrapeJobPage() {
     const titleEl = document.querySelector('h1.jd-header-title, .jd-header-title, h1, [class*="job-title"], [class*="jobTitle"]');
     if (titleEl) role = titleEl.innerText.trim();
 
-    const companyEl = document.querySelector('.jd-header-comp-name a, .jd-header-comp-name, .about-company .comp-name, [class*="companyName"], [class*="company-name"], [class*="company"]');
+    const companyEl = document.querySelector('.jd-header-comp-name a, .jd-header-comp-name, .about-company .comp-name');
     if (companyEl) {
       // Naukri sometimes includes reviews counts or ratings, extract only first text node or trim ratings
       company = companyEl.innerText.split('\n')[0].trim();
@@ -103,6 +103,14 @@ function scrapeJobPage() {
 
     // 3. Fallback Description
     description = selectedText;
+  }
+
+  // Fail-safe: if the scraper parsed the name of the job portal itself, clear it to run sibling proximity check
+  if (company) {
+    const lower = company.toLowerCase();
+    if (lower === 'naukri' || lower === 'naukricampus' || lower === 'naukri campus' || lower === 'linkedin') {
+      company = '';
+    }
   }
 
   // Universal Fallbacks for empty fields (in case specialized scrapers above failed)
