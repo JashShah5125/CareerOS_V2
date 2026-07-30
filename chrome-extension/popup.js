@@ -1,7 +1,7 @@
 // CareerOS Job Clipper - Popup Controller
 
-const BACKEND_URL = 'http://localhost:5000';
-const FRONTEND_URL = 'http://localhost:3000';
+const DEFAULT_BACKEND_URL = 'http://localhost:5001';
+const DEFAULT_FRONTEND_URL = 'http://localhost:3000';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusBadge = document.getElementById('status-badge');
@@ -22,10 +22,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   const textareaNotes = document.getElementById('textarea-notes');
 
   let activeTabUrl = '';
+  let apiBase = DEFAULT_BACKEND_URL;
+  let webBase = DEFAULT_FRONTEND_URL;
 
   // 1. Fetch credentials from extension storage
-  chrome.storage.local.get(['token', 'user'], async (result) => {
+  chrome.storage.local.get(['token', 'user', 'origin'], async (result) => {
     const token = result.token;
+    if (result.origin) {
+      webBase = result.origin;
+      if (result.origin.includes('vercel.app')) {
+        apiBase = result.origin; // Vercel routes are single origin serverless functions
+      } else {
+        apiBase = DEFAULT_BACKEND_URL;
+      }
+    }
+
     if (!token) {
       // Show login required state
       statusBadge.innerText = 'Disconnected';
@@ -43,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Fetch target job boards from CareerOS backend
     try {
-      const response = await fetch(`${BACKEND_URL}/api/jobs`, {
+      const response = await fetch(`${apiBase}/api/jobs`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -108,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Handle open frontend app button click
   btnOpenApp.addEventListener('click', () => {
-    chrome.tabs.create({ url: FRONTEND_URL });
+    chrome.tabs.create({ url: webBase });
   });
 
   // Handle Form Submission
@@ -118,13 +129,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnSubmit.disabled = true;
     btnSubmit.innerText = 'Clipping...';
 
-    chrome.storage.local.get(['token'], async (result) => {
+    chrome.storage.local.get(['token', 'origin'], async (result) => {
       const token = result.token;
       if (!token) {
         showToast('Authentication token missing. Please log in.', 'error');
         btnSubmit.disabled = false;
         btnSubmit.innerText = '🚀 Clip to Kanban Board';
         return;
+      }
+
+      let submissionApiBase = DEFAULT_BACKEND_URL;
+      if (result.origin && result.origin.includes('vercel.app')) {
+        submissionApiBase = result.origin;
       }
 
       const boardVal = selectBoard.value;
@@ -140,7 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
 
       try {
-        const response = await fetch(`${BACKEND_URL}/api/applications`, {
+        const response = await fetch(`${submissionApiBase}/api/applications`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

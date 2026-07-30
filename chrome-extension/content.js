@@ -6,12 +6,16 @@ if (window.location.hostname === 'localhost' || window.location.hostname.include
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
     if (token) {
-      chrome.storage.local.set({ token, user: userStr ? JSON.parse(userStr) : null }, () => {
-        console.log('[CareerOS Clipper] Auth token synchronized to extension storage.');
+      chrome.storage.local.set({ 
+        token, 
+        user: userStr ? JSON.parse(userStr) : null, 
+        origin: window.location.origin 
+      }, () => {
+        console.log('[CareerOS Clipper] Auth token and origin synchronized to extension storage.');
       });
     } else {
-      chrome.storage.local.remove(['token', 'user'], () => {
-        console.log('[CareerOS Clipper] Auth token cleared from extension storage.');
+      chrome.storage.local.remove(['token', 'user', 'origin'], () => {
+        console.log('[CareerOS Clipper] Auth token and origin cleared from extension storage.');
       });
     }
   };

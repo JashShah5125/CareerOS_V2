@@ -12,7 +12,8 @@
     "https://*.linkedin.com/*",
     "https://*.naukri.com/*",
     "http://localhost:3000/*",
-    "http://localhost:5000/*"
+    "http://localhost:5001/*",
+    "https://*.vercel.app/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -25,7 +26,8 @@
       "matches": [
         "https://*.linkedin.com/*",
         "https://*.naukri.com/*",
-        "http://localhost:3000/*"
+        "http://localhost:3000/*",
+        "https://*.vercel.app/*"
       ],
       "js": ["content.js"]
     }
