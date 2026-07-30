@@ -59,11 +59,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 function scrapeJobPage() {
   const url = window.location.href;
+  const hostname = window.location.hostname;
   let company = '';
   let role = '';
   let location = '';
   let description = '';
   let salary = '';
+
+  // Get user highlighted text as description fallback
+  const selectedText = window.getSelection ? window.getSelection().toString().trim() : '';
 
   if (url.includes('linkedin.com')) {
     // 1. Role / Title
@@ -119,6 +123,33 @@ function scrapeJobPage() {
 
     const salaryEl = document.querySelector('.salary span, .salary');
     if (salaryEl) salary = salaryEl.innerText.trim();
+
+  } else {
+    // Universal Scraper Fallback
+    // 1. Guess Role from page h1 or document title
+    const titleEl = document.querySelector('h1');
+    if (titleEl && titleEl.innerText.trim().length > 3) {
+      role = titleEl.innerText.trim();
+    } else {
+      role = document.title.split(' - ')[0].split(' | ')[0].trim();
+    }
+
+    // 2. Guess Company from hostname (e.g. "jobs.stripe.com" -> "Stripe")
+    const parts = hostname.split('.');
+    if (parts.length >= 2) {
+      const candidate = parts[parts.length - 2];
+      company = candidate.charAt(0).toUpperCase() + candidate.slice(1);
+    } else {
+      company = hostname;
+    }
+
+    // 3. Fallback Description
+    description = selectedText;
+  }
+
+  // If description is empty but user highlighted text, use highlighted text
+  if (!description && selectedText) {
+    description = selectedText;
   }
 
   return {

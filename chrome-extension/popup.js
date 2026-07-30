@@ -84,13 +84,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const activeTab = tabs[0];
       activeTabUrl = activeTab.url || '';
 
-      const isSupported = activeTabUrl.includes('linkedin.com') || activeTabUrl.includes('naukri.com');
-      if (!isSupported) {
+      const isSpecialScraper = activeTabUrl.includes('linkedin.com') || activeTabUrl.includes('naukri.com');
+      if (!isSpecialScraper) {
+        urlNotice.innerText = '💡 Pro-Tip: You can highlight/select any text on this page to automatically clip it as the Job Description!';
         urlNotice.classList.remove('hidden');
-        return;
+      } else {
+        urlNotice.classList.add('hidden');
       }
-
-      urlNotice.classList.add('hidden');
 
       // 4. Trigger scraping via content script messaging
       chrome.tabs.sendMessage(activeTab.id, { action: 'scrapeJob' }, (response) => {
