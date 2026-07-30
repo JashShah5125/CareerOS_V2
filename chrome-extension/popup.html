@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CareerOS Job Clipper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="extension-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="sparkle-icon">✨</span>
+        <span class="logo-text">CareerOS Clipper</span>
+      </div>
+      <div id="status-badge" class="badge badge-disconnected">Checking Auth...</div>
+    </header>
+
+    <!-- Auth State Warning (Hidden by default) -->
+    <div id="auth-warning" class="card card-warning hidden">
+      <h3>Authentication Required</h3>
+      <p>Please log in to your CareerOS web application to synchronize your workspace credentials.</p>
+      <button id="btn-open-app" class="btn btn-primary btn-full">
+        Open CareerOS Dashboard
+      </button>
+    </div>
+
+    <!-- Scraper Panel (Hidden by default) -->
+    <div id="clipper-panel" class="hidden">
+      <!-- Info notice if active tab is not a supported job board -->
+      <div id="url-notice" class="url-notice hidden">
+        ℹ️ Open a LinkedIn or Naukri job detail tab to auto-scrape details.
+      </div>
+
+      <!-- Scraped Fields Form -->
+      <form id="clip-form">
+        <div class="form-group">
+          <label class="form-label">Target Kanban Board *</label>
+          <select id="select-board" class="form-input" required>
+            <option value="general">📁 Personal Tracker Board</option>
+          </select>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Company *</label>
+            <input type="text" id="input-company" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role *</label>
+            <input type="text" id="input-role" class="form-input" required />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input type="text" id="input-location" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Salary</label>
+            <input type="text" id="input-salary" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Notes / Description Keywords</label>
+          <textarea id="textarea-notes" class="form-input" rows="4" placeholder="Enter keywords, salary, deadlines, or paste description details..."></textarea>
+        </div>
+
+        <button type="submit" id="btn-submit" class="btn btn-primary btn-full">
+          🚀 Clip to Kanban Board
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

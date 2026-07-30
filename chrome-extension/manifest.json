@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "CareerOS Job Clipper",
+  "version": "1.0.0",
+  "description": "Clip and import job descriptions from LinkedIn and Naukri directly into your CareerOS Kanban Board.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.linkedin.com/*",
+    "https://*.naukri.com/*",
+    "http://localhost:3000/*",
+    "http://localhost:5000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.linkedin.com/*",
+        "https://*.naukri.com/*",
+        "http://localhost:3000/*"
+      ],
+      "js": ["content.js"]
+    }
+  ]
+}
