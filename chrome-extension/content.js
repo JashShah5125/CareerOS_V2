@@ -56,16 +56,37 @@ function scrapeJobPage() {
   let salary = '';
 
   if (url.includes('linkedin.com')) {
-    // Selectors for LinkedIn job page / split-view
+    // 1. Role / Title
     const titleEl = document.querySelector('.job-details-jobs-unified-top-card__job-title, .jobs-unified-top-card__job-title, h1, h2.t-24');
     if (titleEl) role = titleEl.innerText.trim();
 
-    const companyEl = document.querySelector('.job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__company-name, .job-details-jobs-unified-top-card__company-name');
-    if (companyEl) company = companyEl.innerText.trim().replace(/\s*•\s*$/, ''); // Clean bullet dots
+    // 2. Company Name (Systematic check)
+    let companyEl = document.querySelector('.job-details-jobs-unified-top-card__primary-description-container a[href*="/company/"]');
+    if (!companyEl) companyEl = document.querySelector('.job-details-jobs-unified-top-card__primary-description a[href*="/company/"]');
+    if (!companyEl) companyEl = document.querySelector('.jobs-unified-top-card__primary-description a[href*="/company/"]');
+    if (!companyEl) companyEl = document.querySelector('.job-details-jobs-unified-top-card__company-name a');
+    if (!companyEl) companyEl = document.querySelector('.jobs-unified-top-card__company-name');
+    if (!companyEl) companyEl = document.querySelector('a[href*="/company/"]');
+    
+    if (companyEl) {
+      company = companyEl.innerText.trim().replace(/\s*•\s*$/, '').replace(/\s*·\s*$/, '');
+    }
 
+    // 3. Location (Systematic check)
     const locationEl = document.querySelector('.job-details-jobs-unified-top-card__bullet, .jobs-unified-top-card__bullet');
-    if (locationEl) location = locationEl.innerText.trim();
+    if (locationEl) {
+      location = locationEl.innerText.trim();
+    } else {
+      const primaryDescEl = document.querySelector('.job-details-jobs-unified-top-card__primary-description-container, .job-details-jobs-unified-top-card__primary-description, .jobs-unified-top-card__primary-description');
+      if (primaryDescEl) {
+        const parts = primaryDescEl.innerText.split('·');
+        if (parts.length > 1) {
+          location = parts[1].trim();
+        }
+      }
+    }
 
+    // 4. Description
     const descEl = document.querySelector('.jobs-description__content, #job-details, .jobs-box__html-content');
     if (descEl) description = descEl.innerText.trim();
 
