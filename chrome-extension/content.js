@@ -167,12 +167,33 @@ function scrapeJobPage() {
 
   // 2. Company Fallback
   if (!company) {
-    const parts = hostname.split('.');
-    if (parts.length >= 2) {
-      const candidate = parts[parts.length - 2];
-      company = candidate.charAt(0).toUpperCase() + candidate.slice(1);
-    } else {
-      company = hostname;
+    // Try to find the company name near the job title element in the DOM
+    const titleEl = document.querySelector('.job-details-jobs-unified-top-card__job-title, .jobs-unified-top-card__job-title, h1, h2.t-24, [class*="job-title"], [class*="jobTitle"]');
+    if (titleEl) {
+      let sibling = titleEl.nextElementSibling;
+      while (sibling && !company) {
+        const text = sibling.innerText ? sibling.innerText.trim() : '';
+        if (text && text !== role && !text.includes('Reviews') && text.length < 50) {
+          company = text.split('\n')[0].split('•')[0].split('·')[0].trim();
+        }
+        // If the sibling is a container, look for a link child inside it
+        const link = sibling.querySelector('a');
+        if (!company && link && link.innerText.trim() && link.innerText.trim() !== role) {
+          company = link.innerText.trim();
+        }
+        sibling = sibling.nextElementSibling;
+      }
+    }
+    
+    // If still not found, guess from hostname as last resort
+    if (!company) {
+      const parts = hostname.split('.');
+      if (parts.length >= 2) {
+        const candidate = parts[parts.length - 2];
+        company = candidate.charAt(0).toUpperCase() + candidate.slice(1);
+      } else {
+        company = hostname;
+      }
     }
   }
 
