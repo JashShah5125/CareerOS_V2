@@ -109,12 +109,35 @@ export const createApplication = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Company and Role are required' });
     }
 
+    let finalCandidateName = candidateName;
+    let finalCandidateEmail = candidateEmail;
+
+    if (!finalCandidateName || !finalCandidateEmail) {
+      const userDoc = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true }
+      });
+      if (userDoc) {
+        if (!finalCandidateName) {
+          finalCandidateName = userDoc.profile 
+            ? `${userDoc.profile.firstName || ''} ${userDoc.profile.lastName || ''}`.trim() 
+            : '';
+          if (!finalCandidateName) {
+            finalCandidateName = userDoc.email.split('@')[0];
+          }
+        }
+        if (!finalCandidateEmail) {
+          finalCandidateEmail = userDoc.email;
+        }
+      }
+    }
+
     const created = await prisma.application.create({
       data: {
         userId,
         jobId: jobId || null,
-        candidateName: candidateName || '',
-        candidateEmail: candidateEmail || '',
+        candidateName: finalCandidateName || '',
+        candidateEmail: finalCandidateEmail || '',
         candidatePhone: candidatePhone || '',
         company,
         role,
