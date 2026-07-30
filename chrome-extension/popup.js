@@ -2,6 +2,7 @@
 
 const DEFAULT_BACKEND_URL = 'http://localhost:5001';
 const DEFAULT_FRONTEND_URL = 'http://localhost:3000';
+const VERCEL_FRONTEND_URL = 'https://career-os-v2-l1ig.vercel.app';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusBadge = document.getElementById('status-badge');
@@ -10,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlNotice = document.getElementById('url-notice');
   
   const btnOpenApp = document.getElementById('btn-open-app');
+  const btnOpenVercel = document.getElementById('btn-open-vercel');
   const btnSubmit = document.getElementById('btn-submit');
   const selectBoard = document.getElementById('select-board');
   const clipForm = document.getElementById('clip-form');
@@ -120,6 +122,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Handle open frontend app button click
   btnOpenApp.addEventListener('click', () => {
     chrome.tabs.create({ url: webBase });
+  });
+
+  // Handle open vercel app button click
+  btnOpenVercel.addEventListener('click', () => {
+    chrome.tabs.create({ url: VERCEL_FRONTEND_URL });
   });
 
   // Handle Form Submission
