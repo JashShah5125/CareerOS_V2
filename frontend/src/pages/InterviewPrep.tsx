@@ -88,6 +88,7 @@ export default function InterviewPrep() {
   const [isEvaluatingSession, setIsEvaluatingSession] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(false);
+  const [isMediaReady, setIsMediaReady] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const location = useLocation();
@@ -145,7 +146,7 @@ export default function InterviewPrep() {
 
   // Live Video Mode voice loop trigger
   useEffect(() => {
-    if (sessionMode !== 'live-video' || questions.length === 0 || overallEvaluation) return;
+    if (sessionMode !== 'live-video' || questions.length === 0 || overallEvaluation || !isMediaReady) return;
     
     // Reset and speak new question
     window.speechSynthesis.cancel();
@@ -196,7 +197,7 @@ export default function InterviewPrep() {
     return () => {
       window.speechSynthesis.cancel();
     };
-  }, [selectedIdx, questions.length, sessionMode, overallEvaluation]);
+  }, [selectedIdx, questions.length, sessionMode, overallEvaluation, isMediaReady]);
 
   // Start webcam and mic stream
   const startWebcam = async () => {
@@ -305,6 +306,7 @@ export default function InterviewPrep() {
   const handleSelectPastSession = (sessionId: string) => {
     setLoading(true);
     setOverallEvaluation(null);
+    setIsMediaReady(false);
     resumeApi.getInterviewSessionDetail(sessionId)
       .then(res => {
         setQuestions(res.questions);
@@ -352,6 +354,7 @@ export default function InterviewPrep() {
     setAnswers({});
     setSelectedIdx(0);
     setOverallEvaluation(null);
+    setIsMediaReady(false);
     resumeApi.generateInterviewQuestions({ role, company })
       .then(res => {
         setQuestions(res.questions);
@@ -718,7 +721,99 @@ export default function InterviewPrep() {
             </div>
           </Card>
         </div>
-      ) : sessionMode === 'live-video' ? (
+      ) : sessionMode === 'live-video' && !isMediaReady ? (
+        // Render Lobby / Ready Room Screen
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', gap: '1.5rem', width: '100%' }}>
+          <Card style={{ maxWidth: '600px', width: '100%', padding: '2rem', textAlign: 'center' }} title="AI Interview Ready Room" subtitle="Configure and test your camera & mic before launching the session">
+            
+            {/* Camera Preview Box in Lobby */}
+            <div style={{ position: 'relative', width: '100%', height: '260px', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: '#0f0f15', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
+              {stream && !cameraOff ? (
+                <video
+                  ref={el => {
+                    if (el && stream) {
+                      el.srcObject = stream;
+                      el.play().catch(err => console.log('Lobby Video play error:', err));
+                    }
+                  }}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', color: 'var(--text-muted)' }}>
+                  <VideoOff size={40} />
+                  <span style={{ fontSize: '0.85rem' }}>Camera preview is inactive</span>
+                </div>
+              )}
+
+              {/* Status Overlay */}
+              <div style={{
+                position: 'absolute',
+                top: '12px',
+                left: '12px',
+                backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                backdropFilter: 'blur(8px)',
+                padding: '0.3rem 0.625rem',
+                borderRadius: '8px',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                color: stream ? 'var(--success)' : 'var(--danger)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: stream ? 'var(--success)' : 'var(--danger)' }} />
+                {stream ? 'DEVICE CONNECTED' : 'AWAITING PERMISSIONS'}
+              </div>
+            </div>
+
+            {/* Guide Instructions */}
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '1.5rem' }}>
+              Once you enter the interview room, the AI interviewer bot will begin reading the first question aloud. You can speak your answer directly into the microphone.
+            </p>
+
+            {/* Lobby Action Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {stream ? (
+                <button
+                  type="button"
+                  onClick={() => setIsMediaReady(true)}
+                  className="btn btn-primary"
+                  style={{ width: '100%', height: '42px', gap: '0.5rem', justifyContent: 'center' }}
+                >
+                  <PlayCircle size={18} />
+                  <span>Start Live AI Interview Session</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startWebcam}
+                  className="btn btn-primary"
+                  style={{ width: '100%', height: '42px', gap: '0.5rem', justifyContent: 'center', backgroundColor: 'var(--accent)' }}
+                >
+                  <Video size={18} />
+                  <span>Grant Camera & Mic Access</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  stopWebcam();
+                  setSessionMode('written');
+                }}
+                className="btn btn-secondary"
+                style={{ width: '100%', height: '42px', justifyContent: 'center' }}
+              >
+                Practice in Written Mode Instead
+              </button>
+            </div>
+
+          </Card>
+        </div>
+      ) : sessionMode === 'live-video' && isMediaReady ? (
         // 3. NEW: Live Video Interview Interface
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
           
