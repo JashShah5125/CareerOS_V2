@@ -222,6 +222,18 @@ export const resumeApi = {
   saveInterviewAnswers: (id: string, answers: Record<string, string>) => request<{ success: boolean }>(`/api/interview/session/${id}/answers`, {
     method: 'POST',
     body: JSON.stringify({ answers })
+  }),
+  evaluateSession: (id: string) => request<{
+    passed: boolean;
+    score: number;
+    summary: string;
+    technicalDepth: number;
+    communicationStyle: number;
+    behavioralAlignment: number;
+    strengths: string[];
+    weaknesses: string[];
+  }>(`/api/interview/session/${id}/evaluate`, {
+    method: 'POST'
   })
 };
 

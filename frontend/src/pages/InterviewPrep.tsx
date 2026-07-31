@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { resumeApi } from '../api';
 import {
@@ -14,7 +14,18 @@ import {
   FileCode,
   History,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Video,
+  VideoOff,
+  Mic,
+  MicOff,
+  Volume2,
+  Activity,
+  Award,
+  ThumbsUp,
+  ThumbsDown,
+  RefreshCw,
+  VideoIcon
 } from 'lucide-react';
 import Card from '../components/Card';
 import MetricBar from '../components/MetricBar';
@@ -40,6 +51,17 @@ interface Feedback {
   };
 }
 
+interface SessionEvaluation {
+  passed: boolean;
+  score: number;
+  summary: string;
+  technicalDepth: number;
+  communicationStyle: number;
+  behavioralAlignment: number;
+  strengths: string[];
+  weaknesses: string[];
+}
+
 export default function InterviewPrep() {
   const [role, setRole] = useState('');
   const [company, setCompany] = useState('');
@@ -55,6 +77,19 @@ export default function InterviewPrep() {
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // New Live Video Interview States
+  const [sessionMode, setSessionMode] = useState<'written' | 'live-video'>('written');
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isBotSpeaking, setIsBotSpeaking] = useState(false);
+  const [isUserAnswering, setIsUserAnswering] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+  const [overallEvaluation, setOverallEvaluation] = useState<SessionEvaluation | null>(null);
+  const [isEvaluatingSession, setIsEvaluatingSession] = useState(false);
+  const [micMuted, setMicMuted] = useState(false);
+  const [cameraOff, setCameraOff] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const location = useLocation();
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -95,8 +130,181 @@ export default function InterviewPrep() {
     return () => clearTimeout(delayDebounce);
   }, [answers, activeSessionId]);
 
+  // Clean up media streams and speech synthesis on unmount
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+      if (recognitionInstance) {
+        try { recognitionInstance.stop(); } catch (e) {}
+      }
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream, recognitionInstance]);
+
+  // Live Video Mode voice loop trigger
+  useEffect(() => {
+    if (sessionMode !== 'live-video' || questions.length === 0 || overallEvaluation) return;
+    
+    // Reset and speak new question
+    window.speechSynthesis.cancel();
+    stopListening();
+    setLiveTranscript('');
+
+    const activeQuestion = questions[selectedIdx];
+    if (!activeQuestion) return;
+
+    setIsBotSpeaking(true);
+    const utterance = new SpeechSynthesisUtterance(activeQuestion.question);
+    
+    // Fetch and assign an English voice
+    let voices = window.speechSynthesis.getVoices();
+    let englishVoice = voices.find(v => v.lang.startsWith('en-'));
+    
+    if (!englishVoice) {
+      // Chrome sometimes loads voices asynchronously
+      setTimeout(() => {
+        voices = window.speechSynthesis.getVoices();
+        englishVoice = voices.find(v => v.lang.startsWith('en-'));
+        if (englishVoice) utterance.voice = englishVoice;
+        utterance.rate = 0.95;
+        utterance.onend = () => {
+          setIsBotSpeaking(false);
+          startListening();
+        };
+        utterance.onerror = () => {
+          setIsBotSpeaking(false);
+          startListening();
+        };
+        window.speechSynthesis.speak(utterance);
+      }, 200);
+    } else {
+      utterance.voice = englishVoice;
+      utterance.rate = 0.95;
+      utterance.onend = () => {
+        setIsBotSpeaking(false);
+        startListening();
+      };
+      utterance.onerror = () => {
+        setIsBotSpeaking(false);
+        startListening();
+      };
+      window.speechSynthesis.speak(utterance);
+    }
+
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, [selectedIdx, questions.length, sessionMode, overallEvaluation]);
+
+  // Start webcam and mic stream
+  const startWebcam = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setStream(mediaStream);
+      setCameraOff(false);
+      setMicMuted(false);
+    } catch (err) {
+      console.warn('Failed to get camera/microphone feed:', err);
+      showToast('Camera or Microphone access was denied. Running in audio-only / typing fallback mode.', 'error');
+    }
+  };
+
+  const stopWebcam = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
+
+  const toggleMic = () => {
+    if (stream) {
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setMicMuted(!audioTrack.enabled);
+      }
+    }
+  };
+
+  const toggleCamera = () => {
+    if (stream) {
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setCameraOff(!videoTrack.enabled);
+      }
+    }
+  };
+
+  // Web Speech API STT listeners
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      showToast('Speech recognition is not supported in this browser. Please type your answers.', 'error');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsUserAnswering(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      const activeQ = questions[selectedIdx];
+      if (!activeQ) return;
+
+      const baseText = answers[activeQ.id] || '';
+      const textBuffer = (baseText + ' ' + finalTranscript + ' ' + interimTranscript).trim().replace(/\s+/g, ' ');
+      
+      setLiveTranscript(textBuffer);
+      setAnswers(prev => ({
+        ...prev,
+        [activeQ.id]: textBuffer
+      }));
+    };
+
+    recognition.onerror = (err: any) => {
+      console.warn('Speech recognition error:', err);
+    };
+
+    recognition.onend = () => {
+      setIsUserAnswering(false);
+    };
+
+    recognition.start();
+    setRecognitionInstance(recognition);
+  };
+
+  const stopListening = () => {
+    if (recognitionInstance) {
+      try {
+        recognitionInstance.stop();
+      } catch (e) {}
+      setRecognitionInstance(null);
+    }
+    setIsUserAnswering(false);
+  };
+
   const handleSelectPastSession = (sessionId: string) => {
     setLoading(true);
+    setOverallEvaluation(null);
     resumeApi.getInterviewSessionDetail(sessionId)
       .then(res => {
         setQuestions(res.questions);
@@ -110,15 +318,25 @@ export default function InterviewPrep() {
         const loadedFeedback: Record<string, Feedback> = {};
         
         Object.keys(res.feedback).forEach(qId => {
-          const fb = res.feedback[qId];
-          loadedFeedback[qId] = fb;
-          if (!loadedAnswers[qId] && fb.userAnswer) {
-            loadedAnswers[qId] = fb.userAnswer;
+          if (qId === 'overallEvaluation') {
+            setOverallEvaluation(res.feedback[qId]);
+          } else {
+            const fb = res.feedback[qId];
+            loadedFeedback[qId] = fb;
+            if (!loadedAnswers[qId] && fb.userAnswer) {
+              loadedAnswers[qId] = fb.userAnswer;
+            }
           }
         });
         
         setAnswers(loadedAnswers);
         setFeedback(loadedFeedback);
+
+        if (res.feedback && res.feedback.overallEvaluation) {
+          setSessionMode('live-video');
+        } else {
+          setSessionMode('written');
+        }
       })
       .catch(err => {
         console.error(err);
@@ -133,12 +351,17 @@ export default function InterviewPrep() {
     setFeedback({});
     setAnswers({});
     setSelectedIdx(0);
+    setOverallEvaluation(null);
     resumeApi.generateInterviewQuestions({ role, company })
       .then(res => {
         setQuestions(res.questions);
         setActiveSessionId(res.id);
         loadHistory();
         showToast('Practice questions generated successfully!', 'success');
+        
+        if (sessionMode === 'live-video') {
+          startWebcam();
+        }
       })
       .catch(err => {
         console.error(err);
@@ -176,7 +399,76 @@ export default function InterviewPrep() {
       .finally(() => setSubmitting(null));
   };
 
+  // Submit complete live interview session for evaluation
+  const handleEvaluateSession = () => {
+    if (!activeSessionId) return;
+
+    window.speechSynthesis.cancel();
+    stopListening();
+
+    setIsEvaluatingSession(true);
+    resumeApi.evaluateSession(activeSessionId)
+      .then(res => {
+        setOverallEvaluation(res);
+        loadHistory();
+        showToast('AI Mock Interview evaluation completed successfully! 🎉', 'success');
+        stopWebcam();
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('AI session evaluation failed.', 'error');
+      })
+      .finally(() => setIsEvaluatingSession(false));
+  };
+
   const activeQuestion = questions[selectedIdx];
+
+  // Helper radial render function
+  const renderGauge = (label: string, score: number, color: string) => {
+    const radius = 30;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (score / 100) * circumference;
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ position: 'relative', width: '80px', height: '80px' }}>
+          <svg style={{ transform: 'rotate(-90deg)', width: '80px', height: '80px' }}>
+            <circle
+              cx="40"
+              cy="40"
+              r={radius}
+              stroke="var(--border)"
+              strokeWidth="6"
+              fill="transparent"
+            />
+            <circle
+              cx="40"
+              cy="40"
+              r={radius}
+              stroke={color}
+              strokeWidth="6"
+              fill="transparent"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
+            />
+          </svg>
+          <span style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)'
+          }}>
+            {score}%
+          </span>
+        </div>
+        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>{label}</span>
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -184,7 +476,137 @@ export default function InterviewPrep() {
         <h1>Interview Preparation</h1>
       </header>
 
-      {questions.length === 0 ? (
+      {/* Styled global voice elements */}
+      <style>{`
+        @keyframes pulseVoice {
+          0% { transform: scale(1); opacity: 0.4; }
+          50% { transform: scale(1.15); opacity: 0.85; }
+          100% { transform: scale(1); opacity: 0.4; }
+        }
+        .voice-pulse-circle {
+          animation: pulseVoice 1.4s infinite ease-in-out;
+        }
+      `}</style>
+
+      {/* 1. Overall Session Evaluation Dashboard */}
+      {overallEvaluation ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* Verdict Banner Card */}
+          <Card style={{
+            background: overallEvaluation.passed
+              ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%)'
+              : 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%)',
+            border: `1px solid ${overallEvaluation.passed ? 'var(--success)' : 'var(--danger)'}`,
+            padding: '2rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+              <div>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  padding: '0.25rem 0.625rem',
+                  borderRadius: '12px',
+                  backgroundColor: overallEvaluation.passed ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  color: overallEvaluation.passed ? 'var(--success)' : 'var(--danger)',
+                  marginBottom: '0.75rem'
+                }}>
+                  {overallEvaluation.passed ? <CheckCircle size={12} /> : <AlertTriangle size={12} />}
+                  Decision: {overallEvaluation.passed ? 'PASS' : 'FAIL'}
+                </span>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {overallEvaluation.passed
+                    ? 'Congratulations! You passed the live panel criteria.'
+                    : 'Unsuccessful this time. Optimized coaching points recommended below.'}
+                </h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem', maxWidth: '600px', lineHeight: '1.5' }}>
+                  {overallEvaluation.summary}
+                </p>
+              </div>
+
+              {/* Radial Gauges Grid */}
+              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                {renderGauge('Overall Fit', overallEvaluation.score, 'var(--accent)')}
+                {renderGauge('Technical Depth', overallEvaluation.technicalDepth, 'var(--success)')}
+                {renderGauge('Communication', overallEvaluation.communicationStyle, 'var(--warning)')}
+                {renderGauge('Behavioral', overallEvaluation.behavioralAlignment, 'rgba(168, 85, 247, 1)')}
+              </div>
+            </div>
+          </Card>
+
+          {/* Strengths & Weaknesses Grid */}
+          <div className="grid-2">
+            <Card title="Key Strengths" subtitle="Positive performance metrics parsed from responses">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.5rem' }}>
+                {overallEvaluation.strengths.map((str, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '0.625rem', alignItems: 'start' }}>
+                    <ThumbsUp size={16} style={{ color: 'var(--success)', marginTop: '0.125rem', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.4' }}>{str}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card title="Areas of Improvement" subtitle="Qualitative feedback targets for next practice run">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.5rem' }}>
+                {overallEvaluation.weaknesses.map((weak, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '0.625rem', alignItems: 'start' }}>
+                    <ThumbsDown size={16} style={{ color: 'var(--warning)', marginTop: '0.125rem', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: '1.4' }}>{weak}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* Timeline Transcript View */}
+          <Card title="Live Interview Conversation Transcript" subtitle="Full breakdown of spoken questions and transcribed responses">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '0.5rem' }}>
+              {questions.map((q, idx) => (
+                <div key={q.id} style={{ borderBottom: idx < questions.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <span style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      backgroundColor: 'var(--accent-light)',
+                      color: 'var(--accent)',
+                      padding: '0.15rem 0.375rem',
+                      borderRadius: 'var(--radius-sm)'
+                    }}>{q.type}</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Q{idx + 1}. {q.question}</span>
+                  </div>
+                  <div style={{
+                    padding: '0.85rem 1rem',
+                    backgroundColor: 'var(--bg-app)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.825rem',
+                    color: 'var(--text-secondary)',
+                    fontStyle: answers[q.id] ? 'normal' : 'italic',
+                    lineHeight: '1.5'
+                  }}>
+                    {answers[q.id] ? `"${answers[q.id]}"` : '(No spoken response recorded)'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '1rem 0' }}>
+            <button onClick={() => {
+              setQuestions([]);
+              setOverallEvaluation(null);
+              stopWebcam();
+            }} className="btn btn-primary" style={{ height: '42px', padding: '0 2rem' }}>
+              Start Another Practice Session
+            </button>
+          </div>
+        </div>
+      ) : questions.length === 0 ? (
+        // 2. Initialize Session View
         <div className="grid-3" style={{ alignItems: 'start' }}>
           {/* Main Form */}
           <div style={{ gridColumn: 'span 2' }}>
@@ -213,11 +635,38 @@ export default function InterviewPrep() {
                   />
                 </div>
 
+                {/* Session Mode Selector */}
+                <div className="form-group">
+                  <label className="form-label">Interview Mode</label>
+                  <div style={{ display: 'flex', gap: '2rem', marginTop: '0.375rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                      <input
+                        type="radio"
+                        name="sessionMode"
+                        checked={sessionMode === 'written'}
+                        onChange={() => setSessionMode('written')}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      Written Practice (Text editor feedback)
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                      <input
+                        type="radio"
+                        name="sessionMode"
+                        checked={sessionMode === 'live-video'}
+                        onChange={() => setSessionMode('live-video')}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      Live Video AI Interview (Mic & Camera)
+                    </label>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
                   className="btn btn-primary"
-                  style={{ width: '100%', marginTop: '1rem', height: '42px', gap: '0.5rem' }}
+                  style={{ width: '100%', marginTop: '1.5rem', height: '42px', gap: '0.5rem' }}
                 >
                   {loading ? 'Generating Structured Questions...' : 'Start Preparation Session'}
                 </button>
@@ -269,7 +718,268 @@ export default function InterviewPrep() {
             </div>
           </Card>
         </div>
+      ) : sessionMode === 'live-video' ? (
+        // 3. NEW: Live Video Interview Interface
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
+          
+          {/* Left Panel: Camera Stream Feed */}
+          <Card title="Live WebCam Video Feed" subtitle="Ensure your face is centered and lit properly">
+            <div style={{ position: 'relative', width: '100%', height: '340px', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: '#0f0f15', border: '1px solid var(--border)' }}>
+              
+              {/* Webcam Feed Video */}
+              {stream && !cameraOff ? (
+                <video
+                  ref={el => {
+                    if (el && stream) {
+                      el.srcObject = stream;
+                      el.play().catch(err => console.log('Video play error:', err));
+                    }
+                  }}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', color: 'var(--text-muted)' }}>
+                  <VideoOff size={44} style={{ color: 'var(--text-muted)' }} />
+                  <span style={{ fontSize: '0.85rem' }}>Webcam is turned off or blocked</span>
+                </div>
+              )}
+
+              {/* Glassmorphic overlays */}
+              <div style={{
+                position: 'absolute',
+                top: '12px',
+                left: '12px',
+                backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                padding: '0.375rem 0.75rem',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: stream ? 'var(--success)' : 'var(--danger)'
+              }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: stream ? 'var(--success)' : 'var(--danger)'
+                }} />
+                {stream ? 'LIVE FEED ACTIVE' : 'VIDEO INACTIVE'}
+              </div>
+
+              {/* Feed Controls Overlay */}
+              {stream && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '12px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  gap: '0.75rem',
+                  backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <button type="button" onClick={toggleMic} style={{
+                    backgroundColor: micMuted ? 'var(--danger)' : 'rgba(255, 255, 255, 0.1)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}>
+                    {micMuted ? <MicOff size={16} /> : <Mic size={16} />}
+                  </button>
+                  <button type="button" onClick={toggleCamera} style={{
+                    backgroundColor: cameraOff ? 'var(--danger)' : 'rgba(255, 255, 255, 0.1)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}>
+                    {cameraOff ? <VideoOff size={16} /> : <Video size={16} />}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Video Help Guide */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', padding: '0.85rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-app)' }}>
+              <Sparkles size={16} style={{ color: 'var(--accent)', marginTop: '0.15rem', flexShrink: 0 }} />
+              <div>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>Live AI Coach Feedback</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>The AI evaluates structural coherence, STAR methodologies, and language keyword density based on the final transcript.</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Right Panel: Bot Audio Control and Real-time Speech-to-Text */}
+          <Card title={`Live Panel Interrogator — Question ${selectedIdx + 1} of ${questions.length}`} subtitle="Bot interview session console">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              
+              {/* Bot Interaction Banner */}
+              <div style={{
+                padding: '1.25rem',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--bg-app)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', zIndex: 2 }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: isBotSpeaking ? 'var(--accent-light)' : isUserAnswering ? 'rgba(239, 68, 68, 0.1)' : 'var(--border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isBotSpeaking ? 'var(--accent)' : isUserAnswering ? 'var(--danger)' : 'var(--text-muted)'
+                  }} className={isBotSpeaking || isUserAnswering ? 'voice-pulse-circle' : ''}>
+                    {isBotSpeaking ? <Volume2 size={20} /> : isUserAnswering ? <Mic size={20} /> : <Activity size={20} />}
+                  </div>
+                  <div>
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      color: isBotSpeaking ? 'var(--accent)' : isUserAnswering ? 'var(--danger)' : 'var(--text-secondary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {isBotSpeaking ? 'AI Bot Speaking...' : isUserAnswering ? '🎤 Recording Answer...' : 'Console Idle'}
+                    </span>
+                    <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      {isBotSpeaking ? 'Listen to the interview prompt' : isUserAnswering ? 'Speak clearly into your microphone' : 'Select a question to start'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Pulse wave indicators */}
+                {isUserAnswering && (
+                  <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
+                    <span style={{ width: '3px', height: '14px', backgroundColor: 'var(--danger)', borderRadius: '2px', animation: 'pulseVoice 1s infinite alternate ease-in-out' }} />
+                    <span style={{ width: '3px', height: '22px', backgroundColor: 'var(--danger)', borderRadius: '2px', animation: 'pulseVoice 0.8s infinite alternate ease-in-out' }} />
+                    <span style={{ width: '3px', height: '12px', backgroundColor: 'var(--danger)', borderRadius: '2px', animation: 'pulseVoice 1.2s infinite alternate ease-in-out' }} />
+                  </div>
+                )}
+              </div>
+
+              {/* Question Text block */}
+              {activeQuestion && (
+                <div style={{ borderLeft: '3px solid var(--accent)', paddingLeft: '1rem', margin: '0.5rem 0' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Question {selectedIdx + 1} ({activeQuestion.type})</span>
+                  <p style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.25rem', lineHeight: '1.5' }}>
+                    "{activeQuestion.question}"
+                  </p>
+                </div>
+              )}
+
+              {/* Live Transcription Box */}
+              <div className="form-group">
+                <label className="form-label">Real-time Speech Transcript</label>
+                <textarea
+                  value={answers[activeQuestion?.id] || ''}
+                  onChange={e => setAnswers({ ...answers, [activeQuestion.id]: e.target.value })}
+                  className="form-input form-textarea"
+                  placeholder="Your transcribed voice text will populate here in real-time as you speak..."
+                  style={{ height: '150px' }}
+                />
+              </div>
+
+              {/* Live Navigation Panel */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedIdx > 0) {
+                      setSelectedIdx(selectedIdx - 1);
+                    }
+                  }}
+                  disabled={selectedIdx === 0}
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.8rem', height: '36px' }}
+                >
+                  Previous Question
+                </button>
+
+                {selectedIdx < questions.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopListening();
+                      setSelectedIdx(selectedIdx + 1);
+                    }}
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.8rem', height: '36px', gap: '0.375rem' }}
+                  >
+                    <span>Next Question</span>
+                    <ChevronRight size={14} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleEvaluateSession}
+                    disabled={isEvaluatingSession}
+                    className="btn btn-primary"
+                    style={{
+                      fontSize: '0.8rem',
+                      height: '36px',
+                      backgroundColor: 'rgba(168, 85, 247, 1)',
+                      borderColor: 'rgba(168, 85, 247, 1)',
+                      color: '#fff',
+                      boxShadow: '0 4px 10px rgba(168, 85, 247, 0.2)'
+                    }}
+                  >
+                    {isEvaluatingSession ? 'Evaluating Interview...' : 'Submit Interview for Grading'}
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.speechSynthesis.cancel();
+                    stopListening();
+                    stopWebcam();
+                    setQuestions([]);
+                    setOverallEvaluation(null);
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Cancel Interview Session
+                </button>
+              </div>
+
+            </div>
+          </Card>
+
+        </div>
       ) : (
+        // 4. Written Mode view (Existing layout structure preserved)
         <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '1.5rem', alignItems: 'start' }}>
           {/* Left: Sidebar selector of questions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -305,7 +1015,10 @@ export default function InterviewPrep() {
             ))}
 
             <button
-              onClick={() => setQuestions([])}
+              onClick={() => {
+                setQuestions([]);
+                setOverallEvaluation(null);
+              }}
               className="btn btn-secondary"
               style={{ marginTop: '1rem', width: '100%', fontSize: '0.8rem', height: '36px' }}
             >

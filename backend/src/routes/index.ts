@@ -3,7 +3,7 @@ import { login, register, googleLogin, forgotPassword, getProfile, updateProfile
 import { analyzeResume, calculateAtsScore, getLatestResume, tailorResume, saveTailoredResume, listTailoredResumes, deleteTailoredResume } from '../controllers/resume.controller';
 import { analyzeJob, getJobs, createJob, deleteJob } from '../controllers/job.controller';
 import { generateCoverLetter } from '../controllers/coverletter.controller';
-import { generateInterviewQuestions, submitAnswerFeedback, getInterviewHistory, getInterviewSessionDetail, saveInterviewAnswers } from '../controllers/interview.controller';
+import { generateInterviewQuestions, submitAnswerFeedback, getInterviewHistory, getInterviewSessionDetail, saveInterviewAnswers, evaluateInterviewSession } from '../controllers/interview.controller';
 import { getApplications, createApplication, updateApplication, deleteApplication } from '../controllers/tracker.controller';
 import { getSettings, updateSettings, getModelStatus } from '../controllers/settings.controller';
 import { analyzeAtsCustom } from '../controllers/ats.controller';
@@ -84,6 +84,7 @@ router.post('/api/interview/feedback', submitAnswerFeedback);
 router.get('/api/interview/history', getInterviewHistory);
 router.get('/api/interview/session/:id', getInterviewSessionDetail);
 router.post('/api/interview/session/:id/answers', saveInterviewAnswers);
+router.post('/api/interview/session/:id/evaluate', evaluateInterviewSession);
 
 // Applications Tracker (Kanban)
 router.get('/api/applications', getApplications);
