@@ -91,12 +91,15 @@ export default function InterviewPrep() {
   const [isMediaReady, setIsMediaReady] = useState(false);
 
   // Stable callback refs for conditional video element bindings
+  const videoElRef = useRef<HTMLVideoElement | null>(null);
+
   const videoRef = useCallback((el: HTMLVideoElement | null) => {
+    videoElRef.current = el;
     if (el && stream && !cameraOff) {
       if (el.srcObject !== stream) {
         el.srcObject = stream;
-        el.play().catch(err => console.warn('[Video] Play error:', err));
       }
+      el.play().catch(err => console.warn('[Video] Play error:', err));
     }
   }, [stream, cameraOff]);
 
@@ -104,10 +107,18 @@ export default function InterviewPrep() {
     if (el && stream && !cameraOff) {
       if (el.srcObject !== stream) {
         el.srcObject = stream;
-        el.play().catch(err => console.warn('[Lobby Video] Play error:', err));
       }
+      el.play().catch(err => console.warn('[Lobby Video] Play error:', err));
     }
   }, [stream, cameraOff]);
+
+  // Keep camera feed playing when active question index changes
+  useEffect(() => {
+    const videoEl = videoElRef.current;
+    if (videoEl && stream && !cameraOff) {
+      videoEl.play().catch(err => console.warn('[Video Auto-Resume] Play error:', err));
+    }
+  }, [selectedIdx, stream, cameraOff]);
 
   const location = useLocation();
 
