@@ -160,18 +160,30 @@ export default function InterviewPrep() {
     return () => clearTimeout(delayDebounce);
   }, [answers, activeSessionId]);
 
-  // Clean up media streams and speech synthesis on unmount
+  // References to keep cleanup states in sync
+  const streamRef = useRef<MediaStream | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    streamRef.current = stream;
+  }, [stream]);
+
+  useEffect(() => {
+    recognitionRef.current = recognitionInstance;
+  }, [recognitionInstance]);
+
+  // Clean up media streams and speech synthesis on unmount (Runs EXACTLY once on unmount)
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
-      if (recognitionInstance) {
-        try { recognitionInstance.stop(); } catch (e) {}
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
       }
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
-  }, [stream, recognitionInstance]);
+  }, []);
 
   // Live Video Mode voice loop trigger
   useEffect(() => {
