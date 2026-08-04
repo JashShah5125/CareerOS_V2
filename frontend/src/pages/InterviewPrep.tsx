@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { resumeApi } from '../api';
 import {
@@ -90,29 +90,24 @@ export default function InterviewPrep() {
   const [cameraOff, setCameraOff] = useState(false);
   const [isMediaReady, setIsMediaReady] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const lobbyVideoRef = useRef<HTMLVideoElement | null>(null);
-
-  // Manage video stream bindings to avoid re-assigning buffer on re-renders
-  useEffect(() => {
-    const videoEl = videoRef.current;
-    if (videoEl && stream && !cameraOff) {
-      if (videoEl.srcObject !== stream) {
-        videoEl.srcObject = stream;
-        videoEl.play().catch(err => console.warn('[Video] Play error:', err));
+  // Stable callback refs for conditional video element bindings
+  const videoRef = useCallback((el: HTMLVideoElement | null) => {
+    if (el && stream && !cameraOff) {
+      if (el.srcObject !== stream) {
+        el.srcObject = stream;
+        el.play().catch(err => console.warn('[Video] Play error:', err));
       }
     }
-  }, [stream, isMediaReady, cameraOff]);
+  }, [stream, cameraOff]);
 
-  useEffect(() => {
-    const lobbyEl = lobbyVideoRef.current;
-    if (lobbyEl && stream && !cameraOff) {
-      if (lobbyEl.srcObject !== stream) {
-        lobbyEl.srcObject = stream;
-        lobbyEl.play().catch(err => console.warn('[Lobby Video] Play error:', err));
+  const lobbyVideoRef = useCallback((el: HTMLVideoElement | null) => {
+    if (el && stream && !cameraOff) {
+      if (el.srcObject !== stream) {
+        el.srcObject = stream;
+        el.play().catch(err => console.warn('[Lobby Video] Play error:', err));
       }
     }
-  }, [stream, isMediaReady, cameraOff]);
+  }, [stream, cameraOff]);
 
   const location = useLocation();
 
