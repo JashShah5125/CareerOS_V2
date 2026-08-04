@@ -549,3 +549,43 @@ p {
     gap: 0.75rem;
   }
 }
+
+/* Interview Preparation Page Responsive Utility Classes */
+.interview-setup-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.interview-console-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.interview-mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 968px) {
+  .interview-setup-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .interview-console-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .interview-mode-selector {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}

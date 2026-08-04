@@ -682,7 +682,7 @@ export default function InterviewPrep() {
                 {/* Session Mode Selector */}
                 <div className="form-group">
                   <label className="form-label">Interview Mode</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                  <div className="interview-mode-selector">
                     
                     {/* Written Mode Selector Card */}
                     <div
@@ -902,7 +902,7 @@ export default function InterviewPrep() {
         </div>
       ) : sessionMode === 'live-video' && isMediaReady ? (
         // 3. NEW: Live Video Interview Interface
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
+        <div className="interview-console-grid">
           
           {/* Left Panel: Camera Stream Feed */}
           <Card title="Live WebCam Video Feed" subtitle="Ensure your face is centered and lit properly">
@@ -1157,7 +1157,7 @@ export default function InterviewPrep() {
         </div>
       ) : (
         // 4. Written Mode view (Existing layout structure preserved)
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="interview-setup-grid">
           {/* Left: Sidebar selector of questions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', paddingLeft: '0.5rem' }}>Questions</h3>
