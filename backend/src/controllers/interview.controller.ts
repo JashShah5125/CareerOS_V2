@@ -7,7 +7,20 @@ export const generateInterviewQuestions = async (req: Request, res: Response) =>
   try {
     const { role, company } = req.body;
     const targetRole = role || 'Software Developer';
-    const targetCompany = company || 'Tech Industry';
+    
+    let defaultCompany = 'Tech Industry';
+    const roleLower = targetRole.toLowerCase();
+    if (roleLower.includes('sale') || roleLower.includes('account') || roleLower.includes('business dev')) {
+      defaultCompany = 'Sales Industry';
+    } else if (roleLower.includes('market') || roleLower.includes('growth') || roleLower.includes('seo') || roleLower.includes('brand')) {
+      defaultCompany = 'Marketing Industry';
+    } else if (roleLower.includes('hr') || roleLower.includes('resource') || roleLower.includes('talent') || roleLower.includes('recruit')) {
+      defaultCompany = 'HR Industry';
+    } else if (roleLower.includes('finance') || roleLower.includes('accountant') || roleLower.includes('audit')) {
+      defaultCompany = 'Finance Industry';
+    }
+    
+    const targetCompany = company || defaultCompany;
 
     const userId = await getUserIdFromRequest(req);
 
