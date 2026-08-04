@@ -682,27 +682,78 @@ export default function InterviewPrep() {
                 {/* Session Mode Selector */}
                 <div className="form-group">
                   <label className="form-label">Interview Mode</label>
-                  <div style={{ display: 'flex', gap: '2rem', marginTop: '0.375rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                      <input
-                        type="radio"
-                        name="sessionMode"
-                        checked={sessionMode === 'written'}
-                        onChange={() => setSessionMode('written')}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      Written Practice (Text editor feedback)
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                      <input
-                        type="radio"
-                        name="sessionMode"
-                        checked={sessionMode === 'live-video'}
-                        onChange={() => setSessionMode('live-video')}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      Live Video AI Interview (Mic & Camera)
-                    </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                    
+                    {/* Written Mode Selector Card */}
+                    <div
+                      onClick={() => setSessionMode('written')}
+                      style={{
+                        padding: '1rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: sessionMode === 'written' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                        backgroundColor: sessionMode === 'written' ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-card)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.375rem',
+                        boxShadow: sessionMode === 'written' ? '0 4px 12px rgba(99, 102, 241, 0.12)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (sessionMode !== 'written') {
+                          e.currentTarget.style.borderColor = 'var(--accent-hover)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (sessionMode !== 'written') {
+                          e.currentTarget.style.borderColor = 'var(--border)';
+                        }
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: sessionMode === 'written' ? 'var(--accent)' : 'var(--text-primary)' }}>
+                        <MessageSquareCode size={18} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Written Practice</span>
+                      </div>
+                      <p style={{ fontSize: '0.725rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                        Type responses in a code & text editor and get structured, multi-dimensional feedback.
+                      </p>
+                    </div>
+
+                    {/* Live Video Mode Selector Card */}
+                    <div
+                      onClick={() => setSessionMode('live-video')}
+                      style={{
+                        padding: '1rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: sessionMode === 'live-video' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                        backgroundColor: sessionMode === 'live-video' ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-card)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.375rem',
+                        boxShadow: sessionMode === 'live-video' ? '0 4px 12px rgba(99, 102, 241, 0.12)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (sessionMode !== 'live-video') {
+                          e.currentTarget.style.borderColor = 'var(--accent-hover)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (sessionMode !== 'live-video') {
+                          e.currentTarget.style.borderColor = 'var(--border)';
+                        }
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: sessionMode === 'live-video' ? 'var(--accent)' : 'var(--text-primary)' }}>
+                        <Video size={18} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Live Video Interview</span>
+                      </div>
+                      <p style={{ fontSize: '0.725rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                        Simulate a live video interview using your webcam & mic with spoken AI bot prompts.
+                      </p>
+                    </div>
+
                   </div>
                 </div>
 
