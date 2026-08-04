@@ -91,6 +91,29 @@ export default function InterviewPrep() {
   const [isMediaReady, setIsMediaReady] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const lobbyVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Manage video stream bindings to avoid re-assigning buffer on re-renders
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (videoEl && stream && !cameraOff) {
+      if (videoEl.srcObject !== stream) {
+        videoEl.srcObject = stream;
+        videoEl.play().catch(err => console.warn('[Video] Play error:', err));
+      }
+    }
+  }, [stream, isMediaReady, cameraOff]);
+
+  useEffect(() => {
+    const lobbyEl = lobbyVideoRef.current;
+    if (lobbyEl && stream && !cameraOff) {
+      if (lobbyEl.srcObject !== stream) {
+        lobbyEl.srcObject = stream;
+        lobbyEl.play().catch(err => console.warn('[Lobby Video] Play error:', err));
+      }
+    }
+  }, [stream, isMediaReady, cameraOff]);
+
   const location = useLocation();
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -730,12 +753,7 @@ export default function InterviewPrep() {
             <div style={{ position: 'relative', width: '100%', height: '260px', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: '#0f0f15', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
               {stream && !cameraOff ? (
                 <video
-                  ref={el => {
-                    if (el && stream) {
-                      el.srcObject = stream;
-                      el.play().catch(err => console.log('Lobby Video play error:', err));
-                    }
-                  }}
+                  ref={lobbyVideoRef}
                   autoPlay
                   playsInline
                   muted
@@ -824,12 +842,7 @@ export default function InterviewPrep() {
               {/* Webcam Feed Video */}
               {stream && !cameraOff ? (
                 <video
-                  ref={el => {
-                    if (el && stream) {
-                      el.srcObject = stream;
-                      el.play().catch(err => console.log('Video play error:', err));
-                    }
-                  }}
+                  ref={videoRef}
                   autoPlay
                   playsInline
                   muted
